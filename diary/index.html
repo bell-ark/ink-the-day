@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="ko" data-app="diary">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EDEFF3">
+<title>빛줍기</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<link rel="stylesheet" href="../shared/base.css">
+<style>
+:root{--body-ko:'GowunBatang',serif;--body-zh:'LXGWWenKai',serif}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px}
+.t-ko{font-family:var(--title-ko);font-weight:700}
+.t-zh{font-family:var(--title-zh);font-weight:700}
+.greet{padding:20px 0 16px}
+.greet h1{margin:0;font-size:28px;line-height:1.3}
+.greet p{margin:2px 0 0;color:var(--muted);font-size:15px}
+.home-grid{display:grid;gap:20px;padding-bottom:120px}
+@media (min-width:900px){.home-grid{grid-template-columns:340px 1fr;align-items:start}}
+.side{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:14px 12px 12px}
+.cal-head{display:flex;align-items:center;gap:2px;margin-bottom:6px}
+.cal-head h2{flex:1;margin:0 0 0 6px;font-size:18px}
+.cal-today{min-height:32px;padding:0 10px;font-size:13px}
+.cal-week,.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));text-align:center}
+.cal-week span{font-size:12px;color:var(--muted);padding:4px 0}
+.cal-week span:first-child{color:var(--err)}
+.cal-grid{gap:2px}
+.cal-day{position:relative;aspect-ratio:1/1;border:0;background:transparent;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;color:var(--muted);padding:0}
+.cal-day:hover{background:var(--soft)}
+.cal-day .n{line-height:1}
+.cal-day .mark{font-size:14px;line-height:1;height:15px;margin-top:3px}
+.cal-day.lit{color:var(--ink);font-weight:600;background:radial-gradient(circle at 50% 58%,var(--lamp-soft) 0%,transparent 72%)}
+.cal-day.lit .mark:empty::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lamp);box-shadow:0 0 8px 2px var(--lamp-glow);margin-top:4px}
+.cal-day.today{box-shadow:inset 0 0 0 2px var(--accent);color:var(--accent-text);font-weight:600}
+.cal-day.selected{background:var(--soft)}
+.cal-day.future{opacity:.45}
+.cal-stats{display:flex;flex-wrap:wrap;gap:4px 14px;margin:10px 6px 0;font-size:14px;color:var(--muted)}
+.cal-stats strong{color:var(--ink);font-weight:600}
+.mood-panel{padding:16px}
+.mood-panel h2{font-size:18px;margin:0 0 4px}
+.mood-sum{font-size:14px;color:var(--muted);margin:0 0 8px}
+.mood-chart{width:100%;height:auto;display:block;overflow:visible}
+.mood-chart .grid{stroke:var(--line);stroke-width:1}
+.mood-chart .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;opacity:.7}
+.mood-chart .pt{fill:var(--lamp);stroke:var(--surface);stroke-width:2}
+.mood-chart g{cursor:pointer}
+.mood-chart .hit{fill:transparent}
+.mood-chart .ax{font-size:10px;fill:var(--muted);font-family:var(--ui)}
+.mood-dist{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:14px;color:var(--muted)}
+.mood-empty{color:var(--muted);font-size:14px;margin:4px 0 0}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-ctl);padding:0 12px}
+.search svg{width:18px;height:18px;color:var(--muted);flex:none}
+.search input{flex:1;border:0;background:transparent;padding:11px 0;font-size:16px;outline:none;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.chip button{border:0;background:transparent;color:inherit;width:28px;height:28px;border-radius:50%;padding:0;margin-right:-8px}
+.chip-link{border:0;background:none;color:var(--accent-text);font-size:14px;padding:6px;text-decoration:underline;text-underline-offset:3px}
+.banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:var(--r-card);background:var(--lamp-soft);font-size:15px}
+.banner span{flex:1;min-width:160px}
+.memories{margin-top:14px;display:grid;gap:10px}
+.memory{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-card);padding:12px 14px;color:inherit}
+.memory:hover{border-color:var(--accent)}
+.memory span{display:block}
+.memory .when{font-size:13px;color:var(--accent-text);font-weight:600}
+.memory .tt{font-size:17px;margin:2px 0}
+.memory .x{font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.month{margin-top:24px}
+.month-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding:0 2px 6px}
+.month-h h3{margin:0;font-size:18px}
+.month-h span{font-size:13px;color:var(--muted)}
+.entry{display:flex;gap:14px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:14px 2px;align-items:flex-start;color:inherit}
+.entry:hover{background:color-mix(in srgb,var(--soft) 60%,transparent)}
+.e-date{width:40px;flex:none;text-align:center}
+.e-date .d{display:block;font-family:var(--title-ko);font-weight:700;font-size:24px;line-height:1.1}
+.e-date .wd{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.e-body{flex:1;min-width:0}
+.e-body h4{margin:0;font-size:17px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e-body p{margin:3px 0 0;color:var(--muted);font-size:14px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.e-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:5px;font-size:13px;color:var(--muted)}
+.thumb{width:62px;height:62px;object-fit:cover;border-radius:10px;flex:none;background:var(--line)}
+.empty{text-align:center;padding:48px 16px;color:var(--muted)}
+.empty h3{font-size:22px;color:var(--ink);margin:0 0 8px}
+.empty p{margin:0 0 18px}
+.fab-bar{position:fixed;left:0;right:0;bottom:0;padding:0 16px calc(20px + env(safe-area-inset-bottom,0px));pointer-events:none;z-index:15}
+.fab-bar .in{max-width:1060px;margin:0 auto;display:flex;justify-content:flex-end}
+.fab{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;border:0;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:16px;min-height:52px;padding:0 22px;border-radius:999px;box-shadow:0 6px 18px rgba(20,25,45,.25)}
+.fab svg{width:20px;height:20px}
+/* 읽기·쓰기 */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:780px;margin:0 auto;display:flex;align-items:center;gap:8px;height:56px;padding:0 12px 0 6px}
+.topbar .grow{flex:1;min-width:0;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.page{max-width:780px;margin:0 auto;padding:24px 20px 120px}
+.r-date{color:var(--muted);font-size:14px;margin:0}
+.r-title{font-size:30px;line-height:1.35;margin:6px 0 12px;overflow-wrap:anywhere}
+.r-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--muted);background:var(--surface)}
+button.pill{border:0;background:var(--soft);color:var(--accent-text)}
+.prose{font-size:18px;line-height:1.9;overflow-wrap:anywhere}
+.prose[lang="ko"]{font-family:var(--body-ko);word-break:keep-all}
+.prose[lang^="zh"]{font-family:var(--body-zh);word-break:normal;line-break:strict}
+:root[data-theme="dark"] .prose,:root:not([data-theme="light"]) .prose{color:color-mix(in srgb,var(--ink) 92%,var(--muted))}
+.prose p{margin:0 0 .9em}
+.prose h3{font-size:1.15em;line-height:1.5;margin:1.3em 0 .5em}
+.prose blockquote{margin:1em 0;padding:.1em 0 .1em 1em;border-left:3px solid var(--lamp);color:var(--muted)}
+.prose ul,.prose ol{padding-left:1.4em;margin:0 0 .9em}
+.prose img{display:block;max-width:100%;height:auto;border-radius:12px;margin:.6em 0}
+.prose a{color:var(--accent-text)}
+.r-foot{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.ef{margin-bottom:18px}
+.date-input{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);padding:0 12px;font-size:16px}
+.title-input{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;font-size:26px;font-weight:700;padding:6px 0 10px;outline:none}
+.title-input[lang="ko"]{font-family:var(--title-ko)}
+.title-input[lang^="zh"]{font-family:var(--title-zh)}
+.title-input:focus{border-bottom-color:var(--accent)}
+.title-input::placeholder{color:var(--muted);font-weight:400;opacity:.8}
+.picker{display:flex;flex-wrap:wrap;gap:6px}
+.pick{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);padding:6px 8px;min-width:58px;min-height:56px;font-size:12px;color:var(--muted)}
+.pick .e{font-size:22px;line-height:1.2}
+.pick[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--ink);font-weight:600}
+.tags-box{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);padding:6px 8px;min-height:44px}
+.tags-box input{flex:1;min-width:120px;border:0;background:transparent;outline:none;font-size:16px;padding:4px}
+.tag{display:inline-flex;align-items:center;gap:2px;background:var(--soft);color:var(--accent-text);border-radius:999px;padding:2px 2px 2px 10px;font-size:14px}
+.tag button{border:0;background:none;color:inherit;width:28px;height:28px;border-radius:50%;padding:0}
+.editor-shell{border:1px solid var(--line);border-radius:var(--r-card);background:var(--surface)}
+.toolbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:5;display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:2px;padding:6px;border-bottom:1px solid var(--line);background:var(--surface);border-radius:var(--r-card) var(--r-card) 0 0}
+.toolbar button{flex:none;width:40px;height:40px;border:0;background:transparent;border-radius:8px;display:grid;place-items:center;color:var(--muted);font-size:15px}
+.toolbar button:hover{background:var(--soft);color:var(--ink)}
+.toolbar button[aria-pressed="true"]{background:var(--soft);color:var(--accent-text)}
+.toolbar svg{width:18px;height:18px}
+.toolbar .sep{flex:none;width:1px;background:var(--line);margin:6px 4px}
+.editor{min-height:45vh;padding:16px 18px;outline:none;position:relative}
+.editor.is-empty::before{content:attr(data-placeholder);color:var(--muted);opacity:.8;position:absolute;pointer-events:none}
+.edit-foot{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);margin-top:8px}
+/* 설정 */
+.font-opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:var(--r-card);border:1px solid var(--line);background:var(--bg);cursor:pointer;margin-bottom:8px}
+.font-opt:has(input:checked){border:2px solid var(--accent);padding:11px 13px}
+.font-opt input{margin:4px 0 0;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.font-opt .nm{font-size:15px;font-weight:600}
+.font-opt .nt{font-size:13px;color:var(--muted);font-weight:400}
+.font-opt .sm{display:block;font-size:17px;line-height:1.8;margin-top:2px}
+@media (max-width:520px){
+  .greet h1{font-size:24px}
+  .r-title{font-size:25px}
+  .prose{font-size:17px}
+  .picker{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px 2px}
+  .pick{flex:none;min-width:56px}
+}
+</style>
+</head>
+<body>
+<header id="appbar"></header>
+
+<!-- 홈 -->
+<div id="v-home">
+  <div class="wrap">
+    <div class="greet"><h1 class="t-ko" id="greetTitle"></h1><p id="greetSub"></p></div>
+    <div class="home-grid">
+      <div class="side">
+        <section class="panel" id="calPanel">
+          <div class="cal-head">
+            <h2 class="t-title" id="calTitle"></h2>
+            <button class="btn cal-today" id="calToday" hidden></button>
+            <button class="icon-btn" id="calPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+            <button class="icon-btn" id="calNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+          <div class="cal-week" id="calWeek" aria-hidden="true"></div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-stats" id="calStats"></div>
+        </section>
+        <section class="panel mood-panel"><h2 class="t-title" id="moodTitle"></h2><div id="moodBody"></div></section>
+      </div>
+      <section id="listSection">
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="search" id="searchInput" autocomplete="off">
+        </label>
+        <div class="chips" id="chips"></div>
+        <div class="memories" id="memories" hidden></div>
+        <div class="banner" id="draftBanner" hidden><span data-i="draftBanner"></span><button class="btn primary" id="draftResume" data-i="resume"></button><button class="btn bare" id="draftDiscard" data-i="discard"></button></div>
+        <div id="list"></div>
+      </section>
+    </div>
+  </div>
+  <div class="fab-bar"><div class="in"><button class="fab" id="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span data-i="fab"></span></button></div></div>
+</div>
+
+<!-- 읽기 -->
+<div id="v-read" hidden>
+  <div class="topbar"><div class="in">
+    <button class="btn bare" id="readBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span data-i="back"></span></button>
+    <div class="grow"></div>
+    <button class="btn" id="readEdit" data-i="edit"></button>
+    <button class="btn danger" id="readDelete" data-i="delete"></button>
+  </div></div>
+  <article class="page">
+    <p class="r-date" id="readDate"></p>
+    <h1 class="r-title" id="readTitle"></h1>
+    <div class="r-meta" id="readMeta"></div>
+    <div class="prose" id="readContent"></div>
+    <div class="r-foot" id="readFoot"></div>
+  </article>
+</div>
+
+<!-- 쓰기 -->
+<div id="v-edit" hidden>
+  <div class="topbar"><div class="in">
+    <button class="btn bare" id="editCancel" data-i="cancel"></button>
+    <div class="grow" id="editHeading"></div>
+    <button class="btn primary" id="editSave" data-i="save"></button>
+  </div></div>
+  <div class="page">
+    <div class="ef"><label class="field" style="display:inline-flex"><span data-i="date"></span><input type="date" id="dateInput" class="date-input"></label></div>
+    <div class="ef"><input type="text" id="titleInput" class="title-input" maxlength="200" autocomplete="off"></div>
+    <div class="ef"><span class="field-label" id="moodLabel" data-i="mood"></span><div class="picker" id="moodPicker" role="group" aria-labelledby="moodLabel" style="margin-top:6px"></div></div>
+    <div class="ef"><span class="field-label" id="weatherLabel" data-i="weather"></span><div class="picker" id="weatherPicker" role="group" aria-labelledby="weatherLabel" style="margin-top:6px"></div></div>
+    <div class="ef"><label class="field-label" for="tagInput" data-i="tags"></label><div class="tags-box" id="tagsBox" style="margin-top:6px"><input type="text" id="tagInput" autocomplete="off" maxlength="30"></div></div>
+    <div class="editor-shell">
+      <div class="toolbar" role="toolbar" id="toolbar">
+        <button type="button" data-cmd="bold" aria-pressed="false"><b>B</b></button>
+        <button type="button" data-cmd="italic" aria-pressed="false"><i style="font-family:serif">I</i></button>
+        <button type="button" data-cmd="underline" aria-pressed="false"><u>U</u></button>
+        <button type="button" data-cmd="strikeThrough" aria-pressed="false"><s>S</s></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" data-block="h3">H</button>
+        <button type="button" data-cmd="insertUnorderedList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg></button>
+        <button type="button" data-cmd="insertOrderedList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 4v4M3 18h3l-3 3h3" stroke-width="1.6"/></svg></button>
+        <button type="button" data-block="blockquote"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 7h4v4c0 3-1.5 5-4 6l-.7-1.2C7.8 15 8.6 13.6 8.7 12H7zm8 0h4v4c0 3-1.5 5-4 6l-.7-1.2c1.5-.8 2.3-2.2 2.4-3.8H15z"/></svg></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" id="imgBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></button>
+        <input type="file" id="imgInput" accept="image/*" multiple hidden>
+      </div>
+      <div id="editor" class="editor prose is-empty" contenteditable="true" role="textbox" aria-multiline="true" lang="ko"></div>
+    </div>
+    <div class="edit-foot"><span id="charCount"></span><span id="draftState"></span></div>
+  </div>
+</div>
+
+<dialog id="settingsDlg"><div class="dlg"><h2 data-i="settings"></h2><div id="diarySettings"></div><div id="commonBox"></div><div class="dlg-actions"><button class="btn primary" id="settingsClose" data-i="close"></button></div></div></dialog>
+<input type="file" id="importInput" accept=".json,application/json" hidden>
+
+<script type="module">
+import * as Core from '../shared/core.js';
+const { esc, toast, ask, LS } = Core;
+
+/* ===================== 문구 ===================== */
+const D = {
+  ko: {
+    wd: ['일','월','화','수','목','금','토'],
+    md: (m, d) => `${m}월 ${d}일`, mdw: (m, d, w) => `${m}월 ${d}일 ${w}요일`, ym: (y, m) => `${y}년 ${m}월`,
+    long: (y, m, d, w) => `${y}년 ${m}월 ${d}일 ${w}요일`,
+    clock: (dt) => `${dt.getMonth()+1}월 ${dt.getDate()}일 ${dt.getHours() < 12 ? '오전' : '오후'} ${(dt.getHours() % 12) || 12}:${String(dt.getMinutes()).padStart(2,'0')}`,
+    hm: (dt) => `${dt.getHours() < 12 ? '오전' : '오후'} ${(dt.getHours() % 12) || 12}:${String(dt.getMinutes()).padStart(2,'0')}`,
+    todayHas: '오늘 {n}편을 남겼어요.', todayNone: '아직 오늘의 기록이 없어요.', today: '오늘', prevMonth: '이전 달', nextMonth: '다음 달',
+    monthCount: '이번 달 <strong>{n}편</strong>', streak: '<strong>{n}일</strong> 연속으로 쓰는 중',
+    withEntries: ', 일기 {n}편', newEntryAria: ', 새 일기 쓰기', moodTitle: '{m}월의 기분',
+    moodEmpty: '이 달에는 기분을 고른 일기가 없어요. 일기를 쓸 때 기분을 고르면 여기에 흐름이 그려져요.',
+    moodSum: '평균 {e} {avg}점, 기분을 남긴 날 {n}일', dayUnit: '{d}일', moodChartAria: '{m}월 날짜별 기분 점수',
+    search: '제목, 내용, 태그로 찾기', clearFilter: '필터 해제', writeThisDate: '이 날짜로 쓰기',
+    draftBanner: '저장하지 않은 글이 있어요.', resume: '이어 쓰기', discard: '버리기', draftDiscarded: '임시 저장한 글을 버렸어요.',
+    memoryWhen: '{n}년 전 오늘', emptyTitle: '첫 빛을 주워 볼까요?', emptyBody: '오늘 있었던 일 한 가지면 충분해요.', emptyBtn: '첫 일기 쓰기',
+    noMatch: '조건에 맞는 일기가 없어요.', clearAll: '필터 지우기', count: '{n}편', photoDiary: '사진 일기', fab: '오늘 쓰기',
+    back: '목록', edit: '고쳐 쓰기', delete: '지우기', lastEdited: '마지막으로 고친 때: {t}', tagAria: '#{t} 태그가 붙은 일기 보기', deletedElsewhere: '다른 기기에서 지운 일기예요.',
+    cancel: '취소', newTitle: '새 일기', editTitle: '고쳐 쓰기', save: '저장', date: '날짜', titlePh: '제목 (비워 두면 첫 줄을 씁니다)',
+    mood: '기분', weather: '날씨', tags: '태그', tagPh: '입력 후 Enter (예: 여행)', tagRemove: '{t} 태그 빼기', legacy: '기존',
+    tb: { toolbar: '서식', bold: '굵게', italic: '기울임', underline: '밑줄', strikeThrough: '취소선', h3: '소제목', insertUnorderedList: '글머리 목록', insertOrderedList: '번호 목록', blockquote: '인용', image: '사진 넣기' },
+    editorPh: '오늘 주운 빛은 무엇이었나요?', chars: '{n}자', draftHint: '쓰는 동안 이 기기에 임시 저장돼요', draftSaved: '임시 저장됨 {t}', draftLoaded: '저장하지 않았던 내용을 불러왔어요', draftFull: '임시 저장 공간이 부족해요',
+    needBody: '본문을 한 줄 이상 써 주세요.', needDate: '날짜를 골라 주세요.', tooBig: '사진이 너무 많거나 커서 저장할 수 없어요. 사진을 몇 장 빼고 다시 저장해 주세요.', saved: '저장했어요.',
+    leaveTitle: '저장하지 않은 내용이 있어요', leaveBody: '임시 저장해 두면 나중에 목록 위에서 이어 쓸 수 있어요.', keepWriting: '계속 쓰기', discardBtn: '버리기', keepDraft: '임시 저장하고 나가기',
+    imgAdding: '사진 {n}장 넣는 중…', imgFail: '이 사진은 읽을 수 없어요. JPG나 PNG로 다시 시도해 주세요.',
+    deleted: '일기를 지웠어요.', undo: '되돌리기', restored: '되돌렸어요.',
+    settings: '설정', close: '닫기', uiLang: '화면 언어', fontsTitle: '일기 본문 글꼴', fontsDesc: '일기마다 언어를 알아서 판별해 아래 글꼴로 보여 줘요. 모든 기기에 함께 적용돼요.',
+    koDiary: '한국어 일기', zhDiary: '중국어 일기', noteGowun: '부드럽고 따뜻한 느낌', noteNotoKr: '단정한 책 느낌', noteWenkai: '손글씨 같은 해서체', noteSong: '단정한 책 느낌',
+    backup: '백업', lastBackup: '마지막 백업: {t}', neverBackup: '아직 이 기기에서 백업한 적이 없어요.', importNote: '이전 일기장에서 내보낸 파일도 가져올 수 있어요.',
+    exportBtn: '내보내기 ({n}편)', importBtn: '가져오기', danger: '위험한 작업', wipe: '모든 일기 지우기',
+    wipeTitle: '일기 {n}편을 모두 지울까요?', wipeBody: '모든 기기에서 지워지고 되돌릴 수 없어요. 먼저 백업 파일을 저장해 두세요.', backupFirst: '백업 먼저', wipeBtn: '모두 지우기', wiped: '모든 일기를 지웠어요.',
+    exporting: '백업 파일 만드는 중…', nothingToExport: '아직 백업할 일기가 없어요.', exported: '백업 파일을 내려받았어요.',
+    importBad: '백업 파일(.json)을 읽지 못했어요. 내보내기로 만든 파일인지 확인해 주세요.', importNone: '가져올 일기를 찾지 못했어요.', importing: '일기 {n}편 가져오는 중…',
+    importDone: '새로 {a}편, 갱신 {u}편을 가져왔어요.', importSkip: ' {n}편은 이미 최신이라 건너뛰었어요.', importBig: ' {n}편은 너무 커서 가져오지 못했어요.',
+    ago: { now: '방금', m: '{n}분 전', h: '{n}시간 전', d: '{n}일 전' },
+    moods: ['신남','좋음','평온','그저 그럼','울적','힘듦','화남'], weathers: ['맑음','구름 조금','흐림','비','눈','안개','바람']
+  },
+  zh: {
+    wd: ['日','一','二','三','四','五','六'],
+    md: (m, d) => `${m}月${d}日`, mdw: (m, d, w) => `${m}月${d}日 周${w}`, ym: (y, m) => `${y}年${m}月`,
+    long: (y, m, d, w) => `${y}年${m}月${d}日 星期${w}`,
+    clock: (dt) => `${dt.getMonth()+1}月${dt.getDate()}日 ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`,
+    hm: (dt) => `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`,
+    todayHas: '今天写了 {n} 篇。', todayNone: '今天还没有记录。', today: '今天', prevMonth: '上个月', nextMonth: '下个月',
+    monthCount: '本月 <strong>{n}</strong> 篇', streak: '已连续写了 <strong>{n}</strong> 天',
+    withEntries: '，{n} 篇日记', newEntryAria: '，写新日记', moodTitle: '{m}月的心情',
+    moodEmpty: '这个月还没有选择心情的日记。写日记时选择心情，这里就会画出变化。',
+    moodSum: '平均 {e} {avg} 分，记录心情 {n} 天', dayUnit: '{d}日', moodChartAria: '{m}月每日心情分数',
+    search: '按标题、内容、标签搜索', clearFilter: '清除筛选', writeThisDate: '写这一天',
+    draftBanner: '有未保存的内容。', resume: '继续写', discard: '丢弃', draftDiscarded: '已丢弃暂存内容。',
+    memoryWhen: '{n} 年前的今天', emptyTitle: '拾起第一束光吧', emptyBody: '写下今天的一件小事就好。', emptyBtn: '写第一篇日记',
+    noMatch: '没有符合条件的日记。', clearAll: '清除筛选', count: '{n} 篇', photoDiary: '照片日记', fab: '写今天',
+    back: '列表', edit: '编辑', delete: '删除', lastEdited: '最后修改：{t}', tagAria: '查看带 #{t} 标签的日记', deletedElsewhere: '这篇日记已在其他设备上删除。',
+    cancel: '取消', newTitle: '新日记', editTitle: '编辑日记', save: '保存', date: '日期', titlePh: '标题（留空则用第一行）',
+    mood: '心情', weather: '天气', tags: '标签', tagPh: '输入后按 Enter（例：旅行）', tagRemove: '移除标签 {t}', legacy: '原有',
+    tb: { toolbar: '格式', bold: '加粗', italic: '斜体', underline: '下划线', strikeThrough: '删除线', h3: '小标题', insertUnorderedList: '项目列表', insertOrderedList: '编号列表', blockquote: '引用', image: '插入图片' },
+    editorPh: '今天拾到了怎样的光？', chars: '{n} 字', draftHint: '写作时会自动暂存在本机', draftSaved: '已暂存 {t}', draftLoaded: '已恢复未保存的内容', draftFull: '暂存空间不足',
+    needBody: '请至少写一行正文。', needDate: '请选择日期。', tooBig: '图片太多或太大，无法保存。请删掉几张后再保存。', saved: '已保存。',
+    leaveTitle: '有未保存的内容', leaveBody: '暂存后可以稍后在列表上方继续写。', keepWriting: '继续写', discardBtn: '丢弃', keepDraft: '暂存并离开',
+    imgAdding: '正在插入 {n} 张图片…', imgFail: '无法读取这张图片，请换成 JPG 或 PNG 再试。',
+    deleted: '已删除日记。', undo: '撤销', restored: '已恢复。',
+    settings: '设置', close: '关闭', uiLang: '界面语言', fontsTitle: '日记正文字体', fontsDesc: '会自动判断每篇日记的语言，并用下面的字体显示。所有设备同时生效。',
+    koDiary: '韩语日记', zhDiary: '中文日记', noteGowun: '柔和温暖', noteNotoKr: '端正的书本感', noteWenkai: '手写感楷体', noteSong: '端正的书本感',
+    backup: '备份', lastBackup: '上次备份：{t}', neverBackup: '这台设备上还没有备份过。', importNote: '也可以导入旧版日记本导出的文件。',
+    exportBtn: '导出（{n} 篇）', importBtn: '导入', danger: '危险操作', wipe: '删除所有日记',
+    wipeTitle: '要删除全部 {n} 篇日记吗？', wipeBody: '所有设备上都会删除，且无法恢复。请先保存备份文件。', backupFirst: '先备份', wipeBtn: '全部删除', wiped: '已删除所有日记。',
+    exporting: '正在生成备份文件…', nothingToExport: '还没有可备份的日记。', exported: '已下载备份文件。',
+    importBad: '无法读取备份文件（.json），请确认是导出的文件。', importNone: '没有找到可导入的日记。', importing: '正在导入 {n} 篇日记…',
+    importDone: '新增 {a} 篇，更新 {u} 篇。', importSkip: '{n} 篇已是最新，已跳过。', importBig: '{n} 篇太大，未能导入。',
+    ago: { now: '刚刚', m: '{n} 分钟前', h: '{n} 小时前', d: '{n} 天前' },
+    moods: ['开心','不错','平静','一般','低落','疲惫','生气'], weathers: ['晴','少云','阴','雨','雪','雾','风']
+  }
+};
+const MOODS = [{e:'😄',s:5},{e:'🙂',s:4},{e:'😌',s:4},{e:'😐',s:3},{e:'😔',s:2},{e:'😣',s:1},{e:'😠',s:1}];
+const WEATHERS = ['☀️','⛅','☁️','🌧️','❄️','🌫️','💨'];
+const FONTS = { ko: { gowun: "'GowunBatang',serif", noto: "'NotoSerifKR',serif" }, zh: { wenkai: "'LXGWWenKai',serif", song: "'NotoSerifSC',serif" } };
+const DOC_LIMIT = 900 * 1024;
+
+/* ===================== 상태 ===================== */
+const cfg = Object.assign({ uiLang: 'ko', fontKo: 'gowun', fontZh: 'wenkai' }, LS.get('diary.settings', {}));
+let L = D[cfg.uiLang] || D.ko;
+const t = (k, v = {}) => String(k.split('.').reduce((o, p) => o?.[p], L) ?? k).replace(/\{(\w+)\}/g, (_, x) => v[x] ?? '');
+const state = { entries: {}, loaded: false, view: 'home', currentId: null, filter: { q: '', date: null, tag: null }, cal: { y: new Date().getFullYear(), m: new Date().getMonth() } };
+let edit = null;
+
+/* ===================== 도우미 ===================== */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = () => fmtDate(new Date());
+const parseDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const longDate = s => { const d = parseDate(s); return L.long(d.getFullYear(), d.getMonth()+1, d.getDate(), L.wd[d.getDay()]); };
+const newId = () => 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const byteSize = o => new Blob([JSON.stringify(o)]).size;
+const moodIdx = e => MOODS.findIndex(m => m.e === e);
+const moodLabel = e => { const i = moodIdx(e); return i >= 0 ? L.moods[i] : ''; };
+const weatherLabel = e => { const i = WEATHERS.indexOf(e); return i >= 0 ? L.weathers[i] : ''; };
+const timeAgo = ts => { const m = Math.round((Date.now() - ts) / 60000); if (m < 1) return L.ago.now; if (m < 60) return t('ago.m', { n: m }); const h = Math.round(m / 60); if (h < 24) return t('ago.h', { n: h }); return t('ago.d', { n: Math.round(h / 24) }); };
+function detectLang(text) {
+  const h = (text.match(/[\uAC00-\uD7A3]/g) || []).length, c = (text.match(/[\u4E00-\u9FFF]/g) || []).length;
+  if (!h && !c) return cfg.uiLang;
+  return c > h ? 'zh' : 'ko';
+}
+const titleClass = lang => lang === 'zh' ? 't-zh' : 't-ko';
+const htmlLang = lang => lang === 'zh' ? 'zh-CN' : 'ko';
+
+/* 안전한 HTML: 허용한 태그만 새로 만들어 옮김 */
+const TAGS = { P:'p',BR:'br',B:'b',STRONG:'b',I:'i',EM:'i',U:'u',S:'s',STRIKE:'s',DEL:'s',H1:'h3',H2:'h3',H3:'h3',H4:'h3',UL:'ul',OL:'ol',LI:'li',BLOCKQUOTE:'blockquote',IMG:'img',A:'a',DIV:'p' };
+const DROP = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','TEMPLATE','NOSCRIPT','SVG','MATH','VIDEO','AUDIO','FORM','INPUT','BUTTON','SELECT','TEXTAREA','LINK','META','HEAD','TITLE']);
+const safeImg = s => { s = (s || '').trim(); return /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(s) ? s.replace(/\s+/g, '') : null; };
+function sanitizeHTML(html) {
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + String(html || ''), 'text/html');
+  const out = document.createElement('div');
+  (function walk(src, dst) {
+    for (const n of Array.from(src.childNodes)) {
+      if (n.nodeType === 3) { dst.appendChild(document.createTextNode(n.nodeValue)); continue; }
+      if (n.nodeType !== 1 || DROP.has(n.tagName)) continue;
+      const name = TAGS[n.tagName];
+      if (!name) { walk(n, dst); continue; }
+      const el = document.createElement(name);
+      if (name === 'img') { const s = safeImg(n.getAttribute('src')); if (!s) continue; el.setAttribute('src', s); el.setAttribute('alt', ''); dst.appendChild(el); continue; }
+      if (name === 'a') { const h = (n.getAttribute('href') || '').trim(); if (/^(https?:|mailto:)/i.test(h)) { el.setAttribute('href', h); el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); } }
+      walk(n, el); dst.appendChild(el);
+    }
+  })(doc.body, out);
+  return out.innerHTML;
+}
+function htmlToText(html) {
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + (html || ''), 'text/html');
+  doc.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+  doc.querySelectorAll('p,li,h3,blockquote').forEach(b => b.append('\n'));
+  return doc.body.textContent.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+const firstImg = html => { const m = /<img[^>]+src="([^"]+)"/.exec(html || ''); return m ? m[1] : null; };
+const displayTitle = e => e.title || (e.text || '').split('\n').find(l => l.trim())?.slice(0, 40) || t('photoDiary');
+
+function normalize(raw, idHint) {
+  const html = sanitizeHTML(raw.html ?? raw.content ?? '');
+  const text = htmlToText(html);
+  const ts = Number(raw.timestamp) || Date.now();
+  return {
+    id: String(raw.id || idHint || newId()).replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 120) || newId(),
+    date: /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : todayStr(),
+    html, text,
+    title: String(raw.title || '').trim().slice(0, 200),
+    mood: String(raw.mood || '').slice(0, 8), weather: String(raw.weather || '').slice(0, 8),
+    tags: Array.isArray(raw.tags) ? [...new Set(raw.tags.map(x => String(x).replace(/^#/, '').trim().slice(0, 30)).filter(Boolean))].slice(0, 10) : [],
+    lang: raw.lang === 'zh' || raw.lang === 'ko' ? raw.lang : detectLang((raw.title || '') + text),
+    createdAt: Number(raw.createdAt) || ts, updatedAt: Number(raw.updatedAt) || ts
+  };
+}
+const toDoc = e => { const { id, ...rest } = e; return { ...rest, v: 3 }; };
+
+/* ===================== 화면 전환 ===================== */
+function show(view) {
+  state.view = view;
+  for (const v of ['home', 'read', 'edit']) $('#v-' + v).hidden = v !== view;
+  $('#appbar').hidden = view !== 'home';
+  window.scrollTo(0, 0);
+}
+function refreshVisible() {
+  if (state.view === 'home') renderHome();
+  else if (state.view === 'read') {
+    if (!state.entries[state.currentId]) { show('home'); renderHome(); toast(t('deletedElsewhere')); }
+    else renderRead();
+  }
+}
+function applyLang() {
+  L = D[cfg.uiLang] || D.ko;
+  Core.setLang(cfg.uiLang);
+  document.title = cfg.uiLang === 'zh' ? '拾光集' : '빛줍기';
+  document.querySelectorAll('[data-i]').forEach(el => { el.textContent = t(el.dataset.i); });
+  $('#searchInput').placeholder = t('search'); $('#searchInput').setAttribute('aria-label', t('search'));
+  $('#calPrev').setAttribute('aria-label', t('prevMonth')); $('#calNext').setAttribute('aria-label', t('nextMonth'));
+  $('#calToday').textContent = t('today');
+  $('#calWeek').innerHTML = L.wd.map(w => `<span>${w}</span>`).join('');
+  $('#titleInput').placeholder = t('titlePh'); $('#tagInput').placeholder = t('tagPh');
+  $('#editor').dataset.placeholder = t('editorPh');
+  $('#toolbar').setAttribute('aria-label', t('tb.toolbar'));
+  document.querySelectorAll('#toolbar button').forEach(b => b.setAttribute('aria-label', t('tb.' + (b.dataset.cmd || b.dataset.block || 'image'))));
+  document.querySelectorAll('#greetTitle,#calTitle,#moodTitle').forEach(el => { el.className = 't-title'; });
+  buildPickers();
+  if (edit) { syncPickers(); renderTags(); onEditorInput(true); $('#editHeading').textContent = edit.id ? t('editTitle') : t('newTitle'); }
+  refreshVisible();
+}
+function applyFonts() {
+  document.documentElement.style.setProperty('--body-ko', FONTS.ko[cfg.fontKo] || FONTS.ko.gowun);
+  document.documentElement.style.setProperty('--body-zh', FONTS.zh[cfg.fontZh] || FONTS.zh.wenkai);
+}
+
+/* ===================== 홈 ===================== */
+function sortedEntries() { return Object.values(state.entries).sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0)); }
+function entriesByDate() { const m = {}; for (const e of sortedEntries()) (m[e.date] ||= []).push(e); return m; }
+function streak(by) { const d = new Date(); if (!by[fmtDate(d)]) d.setDate(d.getDate() - 1); let n = 0; while (by[fmtDate(d)]) { n++; d.setDate(d.getDate() - 1); } return n; }
+
+function renderHome() {
+  const by = entriesByDate(), now = new Date(), today = todayStr();
+  $('#greetTitle').textContent = L.mdw(now.getMonth()+1, now.getDate(), L.wd[now.getDay()]);
+  $('#greetSub').textContent = by[today] ? t('todayHas', { n: by[today].length }) : t('todayNone');
+  renderCalendar(by); renderChips(); renderMemories(); renderList(); renderDraftBanner();
+}
+function renderCalendar(by) {
+  const { y, m } = state.cal, today = todayStr(), now = new Date();
+  $('#calTitle').textContent = L.ym(y, m + 1);
+  $('#calToday').hidden = (y === now.getFullYear() && m === now.getMonth());
+  const grid = $('#calGrid'); grid.innerHTML = '';
+  const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+  for (let i = 0; i < first; i++) grid.appendChild(document.createElement('span'));
+  for (let d = 1; d <= days; d++) {
+    const ds = `${y}-${pad(m+1)}-${pad(d)}`, list = by[ds];
+    const b = document.createElement('button');
+    b.className = 'cal-day' + (list ? ' lit' : '') + (ds === today ? ' today' : '') + (ds === state.filter.date ? ' selected' : '') + (ds > today ? ' future' : '');
+    b.dataset.date = ds;
+    b.setAttribute('aria-label', L.md(m + 1, d) + (list ? t('withEntries', { n: list.length }) : t('newEntryAria')));
+    const mood = list && list.find(e => e.mood)?.mood;
+    b.innerHTML = `<span class="n">${d}</span><span class="mark">${list && mood ? esc(mood) : ''}</span>`;
+    grid.appendChild(b);
+  }
+  const prefix = `${y}-${pad(m+1)}`;
+  const mc = Object.values(state.entries).filter(e => e.date.startsWith(prefix)).length, st = streak(by);
+  $('#calStats').innerHTML = `<span>${t('monthCount', { n: mc })}</span>` + (st >= 2 ? `<span>${t('streak', { n: st })}</span>` : '');
+  renderMoodChart();
+}
+function renderMoodChart() {
+  const { y, m } = state.cal, days = new Date(y, m + 1, 0).getDate(), prefix = `${y}-${pad(m+1)}`;
+  const per = {}, dist = {};
+  for (const e of Object.values(state.entries)) {
+    if (!e.date.startsWith(prefix) || !e.mood) continue;
+    dist[e.mood] = (dist[e.mood] || 0) + 1;
+    const i = moodIdx(e.mood); if (i >= 0) (per[+e.date.slice(8)] ||= []).push(MOODS[i].s);
+  }
+  const pts = Object.keys(per).map(Number).sort((a, b) => a - b).map(d => ({ d, s: per[d].reduce((a, b) => a + b, 0) / per[d].length }));
+  $('#moodTitle').textContent = t('moodTitle', { m: m + 1 });
+  const body = $('#moodBody');
+  if (!pts.length) { body.innerHTML = `<p class="mood-empty">${esc(t('moodEmpty'))}</p>`; return; }
+  const W = 300, H = 128, Lp = 24, R = 8, T = 8, B = 20;
+  const x = d => Lp + (d - 1) * (W - Lp - R) / (days - 1), yv = s => T + (5 - s) * (H - T - B) / 4;
+  let g = '';
+  for (const [s, em] of [[5, '😄'], [3, '😐'], [1, '😣']]) g += `<line class="grid" x1="${Lp}" x2="${W - R}" y1="${yv(s)}" y2="${yv(s)}"/><text x="2" y="${yv(s) + 4}" style="font-size:12px">${em}</text>`;
+  for (const d of [1, 10, 20, days]) g += `<text class="ax" x="${x(d)}" y="${H - 4}" text-anchor="middle">${esc(t('dayUnit', { d }))}</text>`;
+  if (pts.length > 1) g += `<polyline class="ln" points="${pts.map(p => `${x(p.d).toFixed(1)},${yv(p.s).toFixed(1)}`).join(' ')}"/>`;
+  for (const p of pts) {
+    const near = MOODS.reduce((a, b) => Math.abs(b.s - p.s) < Math.abs(a.s - p.s) ? b : a);
+    const lbl = `${L.md(m + 1, p.d)} ${near.e} ${moodLabel(near.e)}`;
+    g += `<g data-date="${prefix}-${pad(p.d)}" role="button" tabindex="0" aria-label="${esc(lbl)}"><title>${esc(lbl)}</title><circle class="hit" cx="${x(p.d)}" cy="${yv(p.s)}" r="12"/><circle class="pt" cx="${x(p.d)}" cy="${yv(p.s)}" r="5"/></g>`;
+  }
+  const avg = pts.reduce((a, p) => a + p.s, 0) / pts.length;
+  const avgM = MOODS.reduce((a, b) => Math.abs(b.s - avg) < Math.abs(a.s - avg) ? b : a);
+  body.innerHTML = `<p class="mood-sum">${esc(t('moodSum', { e: avgM.e, avg: avg.toFixed(1), n: pts.length }))}</p>
+    <svg class="mood-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t('moodChartAria', { m: m + 1 }))}">${g}</svg>
+    <div class="mood-dist">${Object.entries(dist).sort((a, b) => b[1] - a[1]).map(([e, n]) => `<span>${esc(e)} ${n}</span>`).join('')}</div>`;
+}
+function renderChips() {
+  const box = $('#chips'), { date, tag } = state.filter; box.innerHTML = '';
+  if (date) { const d = parseDate(date); box.insertAdjacentHTML('beforeend', `<span class="chip">${esc(L.md(d.getMonth()+1, d.getDate()))}<button data-clear="date" aria-label="${esc(t('clearFilter'))}">✕</button></span><button class="chip-link" data-write-date="${date}">${esc(t('writeThisDate'))}</button>`); }
+  if (tag) box.insertAdjacentHTML('beforeend', `<span class="chip">#${esc(tag)}<button data-clear="tag" aria-label="${esc(t('clearFilter'))}">✕</button></span>`);
+  box.hidden = !date && !tag;
+}
+function renderMemories() {
+  const box = $('#memories'), f = state.filter, yr = new Date().getFullYear(), md = todayStr().slice(5);
+  const list = (f.q || f.date || f.tag) ? [] : sortedEntries().filter(e => e.date.slice(5) === md && +e.date.slice(0, 4) < yr);
+  box.hidden = !list.length;
+  box.innerHTML = list.slice(0, 3).map(e => {
+    const ex = (e.title ? e.text : (e.text || '').split('\n').slice(1).join(' ')) || '';
+    return `<button class="memory" data-open="${esc(e.id)}"><span class="when">${esc(t('memoryWhen', { n: yr - +e.date.slice(0, 4) }))}${e.mood ? ' ' + esc(e.mood) : ''}</span><span class="tt ${titleClass(e.lang)}" lang="${htmlLang(e.lang)}">${esc(displayTitle(e))}</span>${ex.trim() ? `<span class="x" lang="${htmlLang(e.lang)}">${esc(ex.replace(/\s+/g, ' ').slice(0, 120))}</span>` : ''}</button>`;
+  }).join('');
+}
+function filtered() {
+  const { q, date, tag } = state.filter, ql = q.trim().toLowerCase();
+  return sortedEntries().filter(e => (!date || e.date === date) && (!tag || e.tags.includes(tag)) &&
+    (!ql || [e.title, e.text, e.date, e.tags.map(x => '#' + x).join(' ')].join('\n').toLowerCase().includes(ql)));
+}
+function renderList() {
+  const list = $('#list');
+  if (!state.loaded && !Object.keys(state.entries).length) { list.innerHTML = ''; return; }
+  if (!Object.keys(state.entries).length) {
+    list.innerHTML = `<div class="empty"><h3 class="t-title">${esc(t('emptyTitle'))}</h3><p>${esc(t('emptyBody'))}</p><button class="btn primary" data-write-date="${todayStr()}">${esc(t('emptyBtn'))}</button></div>`; return;
+  }
+  const items = filtered();
+  if (!items.length) { list.innerHTML = `<div class="empty"><p>${esc(t('noMatch'))}</p><button class="btn" data-clear="all">${esc(t('clearAll'))}</button></div>`; return; }
+  const groups = {}; for (const e of items) (groups[e.date.slice(0, 7)] ||= []).push(e);
+  list.innerHTML = Object.entries(groups).map(([ym, arr]) => {
+    const [y, m] = ym.split('-');
+    return `<section class="month"><div class="month-h"><h3 class="t-title">${esc(L.ym(+y, +m))}</h3><span>${esc(t('count', { n: arr.length }))}</span></div>` + arr.map(e => {
+      const d = parseDate(e.date), img = firstImg(e.html), lg = htmlLang(e.lang);
+      const ex = e.title ? (e.text || '') : (e.text || '').split('\n').slice(1).join(' ');
+      return `<button class="entry" data-open="${esc(e.id)}">
+        <div class="e-date"><span class="d">${d.getDate()}</span><span class="wd">${L.wd[d.getDay()]}</span></div>
+        <div class="e-body"><h4 class="${titleClass(e.lang)}" lang="${lg}">${esc(displayTitle(e))}</h4>
+          ${ex.trim() ? `<p lang="${lg}">${esc(ex.replace(/\s+/g, ' ').slice(0, 140))}</p>` : ''}
+          <div class="e-meta">${e.mood ? `<span>${esc(e.mood)}</span>` : ''}${e.weather ? `<span>${esc(e.weather)}</span>` : ''}${e.tags.map(x => `<span>#${esc(x)}</span>`).join('')}</div></div>
+        ${img ? `<img class="thumb" src="${esc(img)}" alt="" loading="lazy">` : ''}</button>`;
+    }).join('') + `</section>`;
+  }).join('');
+}
+function renderDraftBanner() { $('#draftBanner').hidden = !(LS.get('diary.draft', null) && state.view === 'home'); }
+
+/* ===================== 읽기 ===================== */
+function openRead(id) { state.currentId = id; show('read'); renderRead(); }
+function renderRead() {
+  const e = state.entries[state.currentId]; if (!e) return;
+  const lg = htmlLang(e.lang);
+  $('#readDate').textContent = longDate(e.date);
+  const tt = $('#readTitle'); tt.textContent = displayTitle(e); tt.className = 'r-title ' + titleClass(e.lang); tt.lang = lg;
+  const meta = $('#readMeta'); meta.innerHTML = '';
+  if (e.mood) meta.insertAdjacentHTML('beforeend', `<span class="pill">${esc(e.mood)} ${esc(moodLabel(e.mood))}</span>`);
+  if (e.weather) meta.insertAdjacentHTML('beforeend', `<span class="pill">${esc(e.weather)} ${esc(weatherLabel(e.weather))}</span>`);
+  for (const x of e.tags) { const b = document.createElement('button'); b.className = 'pill'; b.textContent = '#' + x; b.dataset.tag = x; b.setAttribute('aria-label', t('tagAria', { t: x })); meta.appendChild(b); }
+  meta.hidden = !meta.childElementCount;
+  const c = $('#readContent'); c.innerHTML = sanitizeHTML(e.html); c.lang = lg;
+  $('#readFoot').textContent = t('lastEdited', { t: L.clock(new Date(e.updatedAt)) });
+}
+
+/* ===================== 쓰기 ===================== */
+const editor = $('#editor');
+let savedRange = null, draftTimer = null, langTimer = null;
+function buildPickers() {
+  const mk = (box, list, key, labels) => {
+    box.innerHTML = '';
+    list.forEach((e, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pick'; b.dataset.val = e; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = `<span class="e" aria-hidden="true">${e}</span><span>${esc(labels[i])}</span>`;
+      b.onclick = () => { if (!edit) return; edit[key] = edit[key] === e ? '' : e; syncPickers(); scheduleDraft(); };
+      box.appendChild(b);
+    });
+  };
+  mk($('#moodPicker'), MOODS.map(m => m.e), 'mood', L.moods);
+  mk($('#weatherPicker'), WEATHERS, 'weather', L.weathers);
+}
+function syncPickers() {
+  for (const [sel, key, list] of [['#moodPicker', 'mood', MOODS.map(m => m.e)], ['#weatherPicker', 'weather', WEATHERS]]) {
+    const box = $(sel); box.querySelectorAll('.legacy').forEach(n => n.remove());
+    if (edit[key] && !list.includes(edit[key])) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pick legacy'; b.dataset.val = edit[key];
+      b.innerHTML = `<span class="e" aria-hidden="true">${esc(edit[key])}</span><span>${esc(t('legacy'))}</span>`;
+      b.onclick = () => { edit[key] = ''; syncPickers(); scheduleDraft(); }; box.prepend(b);
+    }
+    box.querySelectorAll('.pick').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.val === edit[key])));
+  }
+}
+function renderTags() {
+  const box = $('#tagsBox'), input = $('#tagInput'); box.querySelectorAll('.tag').forEach(n => n.remove());
+  for (const x of edit.tags) {
+    const s = document.createElement('span'); s.className = 'tag';
+    s.innerHTML = `#${esc(x)}<button type="button" aria-label="${esc(t('tagRemove', { t: x }))}">✕</button>`;
+    s.querySelector('button').onclick = () => { edit.tags = edit.tags.filter(y => y !== x); renderTags(); scheduleDraft(); };
+    box.insertBefore(s, input);
+  }
+}
+function addTag(raw) { const x = String(raw).replace(/^#/, '').replace(/,/g, '').trim().slice(0, 30); if (x && !edit.tags.includes(x) && edit.tags.length < 10) { edit.tags.push(x); renderTags(); scheduleDraft(); } }
+const formState = () => ({ date: $('#dateInput').value, title: $('#titleInput').value, html: editor.innerHTML, mood: edit.mood, weather: edit.weather, tags: [...edit.tags] });
+const snap = () => JSON.stringify(formState());
+const isDirty = () => edit && snap() !== edit.snap;
+function setEditorLang() {
+  const lg = detectLang($('#titleInput').value + editor.textContent);
+  editor.lang = htmlLang(lg); $('#titleInput').lang = htmlLang(lg);
+}
+function openEditor(id, presetDate) {
+  const e = id ? state.entries[id] : null, draft = LS.get('diary.draft', null);
+  const src = e ? { date: e.date, title: e.title, html: e.html, mood: e.mood, weather: e.weather, tags: e.tags } : { date: presetDate || todayStr(), title: '', html: '', mood: '', weather: '', tags: [] };
+  edit = { id: id || null, mood: src.mood || '', weather: src.weather || '', tags: [...(src.tags || [])], snap: '' };
+  $('#dateInput').value = src.date; $('#titleInput').value = src.title; editor.innerHTML = sanitizeHTML(src.html);
+  edit.snap = snap();
+  let restored = false;
+  if (draft && (draft.forId || null) === edit.id && (!e || draft.savedAt > (e.updatedAt || 0))) {
+    $('#dateInput').value = draft.date || src.date; $('#titleInput').value = draft.title || ''; editor.innerHTML = sanitizeHTML(draft.html || '');
+    edit.mood = draft.mood || ''; edit.weather = draft.weather || ''; edit.tags = draft.tags || []; restored = true;
+  }
+  $('#editHeading').textContent = id ? t('editTitle') : t('newTitle');
+  syncPickers(); renderTags(); setEditorLang(); onEditorInput(true);
+  $('#draftState').textContent = restored ? t('draftLoaded') : t('draftHint');
+  show('edit');
+  if (!id && !restored) $('#titleInput').focus({ preventScroll: true });
+}
+function scheduleDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    if (!edit) return;
+    if (!isDirty()) { LS.del('diary.draft'); return; }
+    const ok = LS.set('diary.draft', { forId: edit.id, ...formState(), html: sanitizeHTML(editor.innerHTML), savedAt: Date.now() });
+    $('#draftState').textContent = ok ? t('draftSaved', { t: L.hm(new Date()) }) : t('draftFull');
+  }, 600);
+}
+function onEditorInput(skip) {
+  const text = editor.textContent.replace(/\s/g, '');
+  editor.classList.toggle('is-empty', !text && !editor.querySelector('img'));
+  $('#charCount').textContent = t('chars', { n: text.length.toLocaleString() });
+  clearTimeout(langTimer); langTimer = setTimeout(setEditorLang, 400);
+  if (skip !== true) scheduleDraft();
+}
+async function saveEdit() {
+  if (!edit) return;
+  const html = sanitizeHTML(editor.innerHTML), text = htmlToText(html);
+  if (!text.trim() && !/<img/.test(html)) { toast(t('needBody'), { kind: 'err' }); editor.focus(); return; }
+  const date = $('#dateInput').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { toast(t('needDate'), { kind: 'err' }); $('#dateInput').focus(); return; }
+  const prev = edit.id ? state.entries[edit.id] : null, now = Date.now(), title = $('#titleInput').value.trim().slice(0, 200);
+  const entry = { id: edit.id || newId(), date, html, text, title, mood: edit.mood, weather: edit.weather, tags: [...edit.tags], lang: detectLang(title + text), createdAt: prev ? prev.createdAt : now, updatedAt: now };
+  if (byteSize(entry) > DOC_LIMIT) { toast(t('tooBig'), { kind: 'err', ms: 7000 }); return; }
+  state.entries[entry.id] = entry;
+  Core.putDoc('diary', entry.id, toDoc(entry)).catch(() => {});
+  clearTimeout(draftTimer); LS.del('diary.draft'); edit = null;
+  openRead(entry.id); toast(t('saved'));
+}
+async function leaveEdit() {
+  if (isDirty()) {
+    const v = await ask({ title: t('leaveTitle'), body: t('leaveBody'), actions: [{ label: t('keepWriting'), value: null }, { label: t('discardBtn'), kind: 'danger', value: 'discard' }, { label: t('keepDraft'), kind: 'primary', value: 'keep' }] });
+    if (!v) return;
+    clearTimeout(draftTimer);
+    if (v === 'discard') LS.del('diary.draft'); else LS.set('diary.draft', { forId: edit.id, ...formState(), html: sanitizeHTML(editor.innerHTML), savedAt: Date.now() });
+  } else { clearTimeout(draftTimer); LS.del('diary.draft'); }
+  const id = edit && edit.id; edit = null;
+  if (id && state.entries[id]) openRead(id); else { show('home'); renderHome(); }
+}
+document.execCommand('defaultParagraphSeparator', false, 'p');
+editor.addEventListener('input', () => onEditorInput());
+$('#titleInput').addEventListener('input', () => { scheduleDraft(); clearTimeout(langTimer); langTimer = setTimeout(setEditorLang, 400); });
+$('#dateInput').addEventListener('input', scheduleDraft);
+document.addEventListener('selectionchange', () => {
+  const s = getSelection();
+  if (s.rangeCount && editor.contains(s.anchorNode)) {
+    savedRange = s.getRangeAt(0).cloneRange();
+    for (const c of ['bold', 'italic', 'underline', 'strikeThrough']) { try { document.querySelector(`#toolbar [data-cmd="${c}"]`).setAttribute('aria-pressed', String(document.queryCommandState(c))); } catch {} }
+  }
+});
+function restoreSel() {
+  editor.focus({ preventScroll: true });
+  const s = getSelection();
+  if (savedRange && editor.contains(savedRange.startContainer)) { s.removeAllRanges(); s.addRange(savedRange); }
+  else { const r = document.createRange(); r.selectNodeContents(editor); r.collapse(false); s.removeAllRanges(); s.addRange(r); }
+}
+$('#toolbar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
+$('#toolbar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.id === 'imgBtn') return;
+  restoreSel();
+  if (b.dataset.cmd) document.execCommand(b.dataset.cmd, false, null);
+  if (b.dataset.block) { const cur = String(document.queryCommandValue('formatBlock') || '').toLowerCase().replace(/[<>]/g, ''); document.execCommand('formatBlock', false, cur === b.dataset.block ? '<p>' : `<${b.dataset.block}>`); }
+  onEditorInput();
+});
+$('#imgBtn').onclick = () => $('#imgInput').click();
+$('#imgInput').onchange = e => { insertImages(e.target.files); e.target.value = ''; };
+editor.addEventListener('paste', e => {
+  const cd = e.clipboardData; if (!cd) return;
+  const files = [...cd.files].filter(f => f.type.startsWith('image/'));
+  if (files.length) { e.preventDefault(); insertImages(files); return; }
+  const html = cd.getData('text/html'); if (html) { e.preventDefault(); document.execCommand('insertHTML', false, sanitizeHTML(html)); return; }
+  const text = cd.getData('text/plain'); if (text) { e.preventDefault(); document.execCommand('insertText', false, text); }
+});
+editor.addEventListener('drop', e => { const files = [...(e.dataTransfer?.files || [])].filter(f => f.type.startsWith('image/')); if (files.length) { e.preventDefault(); insertImages(files); } });
+
+/* 사진: 줄이고 다시 저장(위치 정보도 지워짐)해서 일기 안에 넣음 */
+async function loadBitmap(blob) {
+  try { if (window.createImageBitmap) return await createImageBitmap(blob, { imageOrientation: 'from-image' }); } catch {}
+  return await new Promise((res, rej) => { const u = URL.createObjectURL(blob), im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('decode')); im.src = u; });
+}
+async function compressToDataURL(blob, maxSide = 1280, q = 0.72) {
+  const img = await loadBitmap(blob), s = Math.min(1, maxSide / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', q);
+}
+function dataURLtoBlob(u) { const [h, b] = u.split(','); const mime = /data:([^;]+)/.exec(h)[1]; const bin = atob(b), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: mime }); }
+async function insertImages(list) {
+  const files = [...list].filter(f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name || '')); if (!files.length) return;
+  const tt = toast(t('imgAdding', { n: files.length }), { ms: 0 });
+  for (const f of files) {
+    try { const src = await compressToDataURL(f); restoreSel(); document.execCommand('insertHTML', false, `<p><img src="${src}" alt=""></p><p><br></p>`); const s = getSelection(); if (s.rangeCount) savedRange = s.getRangeAt(0).cloneRange(); }
+    catch { toast(t('imgFail'), { kind: 'err' }); }
+  }
+  tt.dismiss(); onEditorInput();
+}
+async function shrinkImages(entry) {
+  if (!/src="data:image/.test(entry.html)) return entry;
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + entry.html, 'text/html');
+  for (const img of doc.querySelectorAll('img[src^="data:image"]')) {
+    const src = img.getAttribute('src'); if (src.length < 200000) continue;
+    try { img.setAttribute('src', await compressToDataURL(dataURLtoBlob(src))); } catch { img.remove(); }
+  }
+  const html = sanitizeHTML(doc.body.innerHTML); return { ...entry, html, text: htmlToText(html) };
+}
+
+/* ===================== 지우기·백업 ===================== */
+function deleteEntry(id) {
+  const copy = state.entries[id]; if (!copy) return;
+  delete state.entries[id]; Core.removeDoc('diary', id).catch(() => {});
+  show('home'); renderHome();
+  toast(t('deleted'), { action: t('undo'), ms: 8000, onAction: () => { const e = { ...copy, updatedAt: Date.now() }; state.entries[id] = e; Core.putDoc('diary', id, toDoc(e)).catch(() => {}); renderHome(); toast(t('restored')); } });
+}
+function exportAll() {
+  const list = sortedEntries(); if (!list.length) { toast(t('nothingToExport')); return; }
+  const json = JSON.stringify({ app: 'bitjupgi', version: 3, exportedAt: new Date().toISOString(), entries: list });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download = `diary-backup-${todayStr()}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  LS.set('diary.lastBackup', Date.now()); toast(t('exported'));
+}
+async function importFile(file) {
+  let raw; try { raw = JSON.parse(await file.text()); } catch { toast(t('importBad'), { kind: 'err', ms: 6000 }); return; }
+  let list = Array.isArray(raw) ? raw : Array.isArray(raw?.entries) ? raw.entries : (raw && typeof raw === 'object') ? Object.entries(raw).map(([k, v]) => ({ ...(v || {}), id: (v && v.id) || k })) : [];
+  list = list.filter(v => v && typeof v === 'object' && (v.content || v.html || v.title));
+  if (!list.length) { toast(t('importNone'), { kind: 'err' }); return; }
+  const tt = toast(t('importing', { n: list.length }), { ms: 0 });
+  let a = 0, u = 0, skip = 0, big = 0; const writes = [];
+  for (const r of list) {
+    const e = await shrinkImages(normalize(r));
+    if (byteSize(e) > DOC_LIMIT) { big++; continue; }
+    const cur = state.entries[e.id];
+    if (cur && (cur.updatedAt || 0) >= e.updatedAt) { skip++; continue; }
+    cur ? u++ : a++; state.entries[e.id] = e; writes.push([e.id, toDoc(e)]);
+  }
+  if (writes.length) Core.putMany('diary', writes).catch(() => {});
+  tt.dismiss(); renderHome();
+  toast(t('importDone', { a, u }) + (skip ? t('importSkip', { n: skip }) : '') + (big ? t('importBig', { n: big }) : ''), { ms: 7000 });
+}
+async function deleteAll() {
+  const ids = Object.keys(state.entries); if (!ids.length) return;
+  const v = await ask({ title: t('wipeTitle', { n: ids.length }), body: t('wipeBody'), actions: [{ label: t('cancel'), value: null }, { label: t('backupFirst'), value: 'backup' }, { label: t('wipeBtn'), kind: 'danger solid', value: 'del' }] });
+  if (v === 'backup') { exportAll(); return; }
+  if (v !== 'del') return;
+  for (const id of ids) delete state.entries[id];
+  Core.removeMany('diary', ids).catch(() => {});
+  renderHome(); toast(t('wiped'));
+}
+
+/* ===================== 설정 ===================== */
+function renderSettings() {
+  const n = Object.keys(state.entries).length, last = LS.get('diary.lastBackup', null);
+  const opt = (group, val, name, note, fam, sample, lang) => `<label class="font-opt"><input type="radio" name="${group}" value="${val}" ${cfg[group] === val ? 'checked' : ''}><span><span class="nm">${name} <span class="nt">${esc(note)}</span></span><span class="sm" lang="${lang}" style="font-family:${fam};${lang === 'ko' ? 'word-break:keep-all' : ''}">${sample}</span></span></label>`;
+  const koS = '퇴근길에 첫눈이 내렸다. 우산 없이 천천히 걸어서 집까지 왔다.', zhS = '下班路上下了第一场雪。我没有打伞，慢慢走回了家。';
+  $('#diarySettings').innerHTML = `
+    <div class="set-sec"><h3>${esc(t('uiLang'))}</h3><div class="seg" role="group" aria-label="${esc(t('uiLang'))}">
+      <button data-ui="ko" aria-pressed="${cfg.uiLang === 'ko'}">한국어</button><button data-ui="zh" aria-pressed="${cfg.uiLang === 'zh'}">中文</button></div></div>
+    <div class="set-sec"><h3>${esc(t('fontsTitle'))}</h3><p>${esc(t('fontsDesc'))}</p>
+      <p style="font-weight:600;color:var(--ink);margin-top:10px">${esc(t('koDiary'))}</p>
+      ${opt('fontKo', 'gowun', '고운바탕', t('noteGowun'), FONTS.ko.gowun, koS, 'ko')}${opt('fontKo', 'noto', '본명조', t('noteNotoKr'), FONTS.ko.noto, koS, 'ko')}
+      <p style="font-weight:600;color:var(--ink);margin-top:10px">${esc(t('zhDiary'))}</p>
+      ${opt('fontZh', 'wenkai', '霞鹜文楷', t('noteWenkai'), FONTS.zh.wenkai, zhS, 'zh-CN')}${opt('fontZh', 'song', '思源宋体', t('noteSong'), FONTS.zh.song, zhS, 'zh-CN')}</div>
+    <div class="set-sec"><h3>${esc(t('backup'))}</h3><p>${esc(last ? t('lastBackup', { t: timeAgo(last) }) : t('neverBackup'))} ${esc(t('importNote'))}</p>
+      <div class="set-row"><button class="btn" data-s="export">${esc(t('exportBtn', { n }))}</button><button class="btn" data-s="import">${esc(t('importBtn'))}</button></div></div>
+    <div class="set-sec"><h3>${esc(t('danger'))}</h3><div class="set-row"><button class="btn danger" data-s="wipe" ${n ? '' : 'disabled'}>${esc(t('wipe'))}</button></div></div>`;
+}
+function openSettings() { renderSettings(); $('#settingsDlg').showModal(); }
+$('#diarySettings').addEventListener('click', e => {
+  const ui = e.target.closest('[data-ui]');
+  if (ui) { setCfg({ uiLang: ui.dataset.ui }); return; }
+  const b = e.target.closest('[data-s]'); if (!b) return;
+  if (b.dataset.s === 'export') exportAll();
+  if (b.dataset.s === 'import') $('#importInput').click();
+  if (b.dataset.s === 'wipe') { $('#settingsDlg').close(); deleteAll(); }
+});
+$('#diarySettings').addEventListener('change', e => { const r = e.target.closest('input[type=radio]'); if (r) setCfg({ [r.name]: r.value }); });
+$('#settingsClose').onclick = () => $('#settingsDlg').close();
+$('#importInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) { $('#settingsDlg').close(); importFile(f); } };
+function setCfg(partial, fromRemote) {
+  const langChanged = partial.uiLang && partial.uiLang !== cfg.uiLang;
+  Object.assign(cfg, partial); LS.set('diary.settings', cfg);
+  applyFonts(); if (langChanged) applyLang();
+  if ($('#settingsDlg').open) { renderSettings(); }
+  if (!fromRemote) Core.saveSettings('diary', partial).catch(() => {});
+}
+
+/* ===================== 이벤트 ===================== */
+$('#calPrev').onclick = () => { if (--state.cal.m < 0) { state.cal.m = 11; state.cal.y--; } renderCalendar(entriesByDate()); };
+$('#calNext').onclick = () => { if (++state.cal.m > 11) { state.cal.m = 0; state.cal.y++; } renderCalendar(entriesByDate()); };
+$('#calToday').onclick = () => { const n = new Date(); state.cal = { y: n.getFullYear(), m: n.getMonth() }; renderCalendar(entriesByDate()); };
+$('#calGrid').addEventListener('click', e => {
+  const b = e.target.closest('.cal-day'); if (!b) return; const ds = b.dataset.date;
+  if (b.classList.contains('lit')) { state.filter.date = state.filter.date === ds ? null : ds; renderHome(); if (state.filter.date && innerWidth < 900) $('#listSection').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  else openEditor(null, ds);
+});
+$('#moodBody').addEventListener('click', e => { const g = e.target.closest('[data-date]'); if (!g) return; state.filter.date = g.dataset.date; renderHome(); if (innerWidth < 900) $('#listSection').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+$('#moodBody').addEventListener('keydown', e => { const g = e.target.closest('[data-date]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+$('#searchInput').addEventListener('input', e => { state.filter.q = e.target.value; renderList(); renderMemories(); });
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-open]'); if (o) { openRead(o.dataset.open); return; }
+  const w = e.target.closest('[data-write-date]'); if (w) { openEditor(null, w.dataset.writeDate); return; }
+  const c = e.target.closest('[data-clear]');
+  if (c) { const k = c.dataset.clear; if (k === 'all') { state.filter = { q: '', date: null, tag: null }; $('#searchInput').value = ''; } else state.filter[k] = null; renderHome(); return; }
+  const tg = e.target.closest('#readMeta [data-tag]');
+  if (tg) { state.filter = { q: '', date: null, tag: tg.dataset.tag }; $('#searchInput').value = ''; show('home'); renderHome(); }
+});
+$('#fab').onclick = () => openEditor(null, todayStr());
+$('#readBack').onclick = () => { show('home'); renderHome(); };
+$('#readEdit').onclick = () => openEditor(state.currentId);
+$('#readDelete').onclick = () => deleteEntry(state.currentId);
+$('#editCancel').onclick = leaveEdit;
+$('#editSave').onclick = saveEdit;
+$('#titleInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); restoreSel(); } });
+$('#tagInput').addEventListener('keydown', e => {
+  if (e.isComposing) return;
+  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(e.target.value); e.target.value = ''; }
+  else if (e.key === 'Backspace' && !e.target.value && edit.tags.length) { edit.tags.pop(); renderTags(); scheduleDraft(); }
+});
+$('#tagInput').addEventListener('blur', e => { if (e.target.value.trim()) { addTag(e.target.value); e.target.value = ''; } });
+$('#draftResume').onclick = () => { const d = LS.get('diary.draft', null); if (d) openEditor(d.forId && state.entries[d.forId] ? d.forId : null, d.date); };
+$('#draftDiscard').onclick = () => { LS.del('diary.draft'); renderDraftBanner(); toast(t('draftDiscarded')); };
+document.addEventListener('keydown', e => { if (state.view === 'edit' && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveEdit(); } });
+addEventListener('beforeunload', e => { if (state.view === 'edit' && isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.view === 'home') renderHome(); });
+
+/* ===================== 시작 ===================== */
+applyFonts(); applyLang();
+await Core.init({ app: 'diary', lang: cfg.uiLang, root: '../' });
+Core.mountAppbar({ onSettings: openSettings });
+Core.mountCommonSettings($('#commonBox'));
+applyLang();
+Core.watchSettings('diary', d => {
+  const p = {}; for (const k of ['uiLang', 'fontKo', 'fontZh']) if (d[k] && d[k] !== cfg[k]) p[k] = d[k];
+  if (Object.keys(p).length) setCfg(p, true);
+});
+Core.watchCollection('diary', (docs, meta) => {
+  const next = {};
+  for (const d of docs) { try { next[d.id] = normalize({ ...d.data, id: d.id }); } catch {} }
+  state.entries = next;
+  if (!meta.fromCache) state.loaded = true; else if (docs.length) state.loaded = true;
+  refreshVisible();
+});
+</script>
+</body>
+</html>

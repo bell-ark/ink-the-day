@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F4F2">
+<title>Ink the Day</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="shared/base.css">
+<style>
+.wrap{max-width:560px;margin:0 auto;padding:40px 20px 80px}
+.hello{font-family:var(--title-ko);font-weight:700;font-size:30px;line-height:1.3;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 28px}
+.tiles{display:grid;gap:12px}
+.tile{display:flex;align-items:center;gap:16px;padding:18px;border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line);color:inherit;text-decoration:none}
+.tile:hover{border-color:var(--muted)}
+.tile.off{opacity:.55;pointer-events:none}
+.tile .g{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;flex:none}
+.tile .g svg{width:26px;height:26px}
+.tile .n{display:block;font-weight:700;font-size:20px;line-height:1.3}
+.tile .d{display:block;font-size:14px;color:var(--muted)}
+.login{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:22px;display:flex;flex-direction:column;gap:14px}
+.login .err{color:var(--err);font-size:14px;min-height:1.4em;margin:0}
+.link{border:0;background:none;color:var(--muted);text-decoration:underline;text-underline-offset:3px;padding:8px 0;font-size:14px;align-self:flex-start}
+</style>
+</head>
+<body>
+<header id="appbar"></header>
+<main class="wrap">
+  <section id="loginView" hidden>
+    <h1 class="hello">Ink the Day</h1>
+    <p class="sub">일기, 식단, 가계부를 한곳에서. 로그인하면 모든 기기에서 이어서 기록할 수 있어요.</p>
+    <form class="login" id="loginForm" novalidate>
+      <label class="field"><span>이메일</span><input class="input" type="email" id="email" autocomplete="username" required></label>
+      <label class="field"><span>비밀번호</span><input class="input" type="password" id="password" autocomplete="current-password" required></label>
+      <p class="err" id="loginErr" role="alert"></p>
+      <button class="btn primary" type="submit" id="loginBtn">로그인</button>
+      <button class="link" type="button" id="resetBtn">비밀번호를 잊었어요</button>
+    </form>
+  </section>
+  <section id="homeView" hidden>
+    <h1 class="hello" id="hello"></h1>
+    <p class="sub">무엇을 기록할까요?</p>
+    <nav class="tiles" id="tiles" aria-label="앱"></nav>
+  </section>
+</main>
+<dialog id="settingsDlg"><div class="dlg"><h2>설정</h2><div id="commonBox"></div><div class="dlg-actions"><button class="btn primary" id="settingsClose">닫기</button></div></div></dialog>
+
+<script type="module">
+import * as Core from './shared/core.js';
+const $ = s => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+const next = (params.get('next') || '').replace(/[^a-z]/g, '');
+const goNext = () => { const a = Core.APPS.find(x => x.key === next && x.ready); if (a) { location.replace(a.path); return true; } return false; };
+
+function showHome(user) {
+  $('#loginView').hidden = true; $('#homeView').hidden = false;
+  Core.mountAppbar({ title: 'Ink the Day', onSettings: () => $('#settingsDlg').showModal() });
+  const h = new Date().getHours();
+  $('#hello').textContent = h < 11 ? '좋은 아침이에요' : h < 18 ? '좋은 오후예요' : '좋은 저녁이에요';
+  $('#tiles').innerHTML = Core.APPS.map(a => `<a class="tile${a.ready ? '' : ' off'}" href="${a.path}" ${a.ready ? '' : 'aria-disabled="true" tabindex="-1"'}>
+      <span class="g" style="background:${a.color};color:${a.on}">${Core.svg(a.key === 'diary' ? 'M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7.5h6' : a.key === 'meal' ? 'M3.5 11.5h17a8.5 8.5 0 0 1-17 0ZM9 8c0-1.5 1.5-1.5 1.5-3M13.5 8c0-1.5 1.5-1.5 1.5-3' : 'M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3M4 7.5V17a2 2 0 0 0 2 2h14V9H6.5A2.5 2.5 0 0 1 4 7.5ZM16 14h.01', 26)}</span>
+      <span><span class="n" style="font-family:${a.key === 'budget' ? 'var(--title-zh)' : 'var(--title-ko)'}">${Core.esc(a.name.ko)}</span><span class="d">${Core.esc(a.ready ? a.desc.ko : '곧 옮겨 와요')}</span></span>
+    </a>`).join('');
+  Core.mountCommonSettings($('#commonBox'));
+}
+$('#settingsClose').onclick = () => $('#settingsDlg').close();
+
+const ERR = {
+  'auth/invalid-credential': '이메일이나 비밀번호가 맞지 않아요.',
+  'auth/invalid-email': '이메일 형식을 확인해 주세요.',
+  'auth/user-disabled': '사용이 중지된 계정이에요.',
+  'auth/too-many-requests': '시도가 너무 많았어요. 잠시 후 다시 시도해 주세요.',
+  'auth/network-request-failed': '인터넷 연결을 확인해 주세요. 첫 로그인은 온라인에서만 할 수 있어요.'
+};
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#email').value.trim(), pw = $('#password').value;
+  if (!email || !pw) { $('#loginErr').textContent = '이메일과 비밀번호를 입력해 주세요.'; return; }
+  $('#loginBtn').disabled = true; $('#loginErr').textContent = '';
+  try { const u = await Core.signIn(email, pw); if (!goNext()) showHome(u); }
+  catch (err) { $('#loginErr').textContent = ERR[err.code] || '로그인하지 못했어요. 다시 시도해 주세요.'; }
+  finally { $('#loginBtn').disabled = false; }
+});
+$('#resetBtn').onclick = async () => {
+  const email = $('#email').value.trim();
+  if (!email) { $('#loginErr').textContent = '먼저 이메일을 입력해 주세요.'; $('#email').focus(); return; }
+  try { await Core.resetPassword(email); Core.toast('비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요.', { ms: 6000 }); }
+  catch (err) { $('#loginErr').textContent = ERR[err.code] || '메일을 보내지 못했어요.'; }
+};
+
+const user = await Core.init({ app: null, lang: 'ko', root: './', requireAuth: false });
+if (user) { if (!goNext()) showHome(user); }
+else { $('#loginView').hidden = false; $('#email').focus(); }
+</script>
+</body>
+</html>
