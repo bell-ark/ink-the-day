@@ -1,17 +1,24 @@
-/* ===== 글꼴: 모두 함께 배포되어 기기·오프라인과 관계없이 같은 모습 ===== */
-@font-face{font-family:'GowunBatang';src:url(../fonts/gowun-batang-400.woff2) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'GowunBatang';src:url(../fonts/gowun-batang-700.woff2) format('woff2');font-weight:700;font-display:swap}
-@font-face{font-family:'NotoSerifKR';src:url(../fonts/noto-serif-kr.woff2) format('woff2');font-weight:200 900;font-display:swap}
-@font-face{font-family:'NotoSerifSC';src:url(../fonts/noto-serif-sc.woff2) format('woff2');font-weight:200 900;font-display:swap}
-@font-face{font-family:'NotoSansSC';src:url(../fonts/noto-sans-sc.woff2) format('woff2');font-weight:100 900;font-display:swap}
-@font-face{font-family:'LXGWWenKai';src:url(../fonts/lxgw-wenkai.woff2) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'Pretendard';src:url(../fonts/pretendard.woff2) format('woff2');font-weight:100 900;font-display:swap}
+/* ===== 글꼴: 모두 함께 배포되어 기기·오프라인과 관계없이 같은 모습 =====
+   한 글꼴 이름 안에서 글자 종류별로 담당 파일을 나눈다(unicode-range).
+   한글·영문·숫자는 고운바탕/Pretendard, 한자·중국어 문장부호는 霞鹜文楷/思源黑体가 맡아
+   언어 판별과 상관없이 글자마다 맞는 글꼴이 나온다. 필요한 글자가 나올 때만 파일을 받는다. */
+@font-face{font-family:'InkSerif';src:url(../fonts/gowun-batang-400.woff2) format('woff2');font-weight:100 599;font-display:swap;unicode-range:U+0000-024F,U+0300-036F,U+1100-11FF,U+1E00-1EFF,U+2000-218F,U+2190-21FF,U+2460-24FF,U+3130-318F,U+A960-A97F,U+AC00-D7AF,U+D7B0-D7FF}
+@font-face{font-family:'InkSerif';src:url(../fonts/gowun-batang-700.woff2) format('woff2');font-weight:600 900;font-display:swap;unicode-range:U+0000-024F,U+0300-036F,U+1100-11FF,U+1E00-1EFF,U+2000-218F,U+2190-21FF,U+2460-24FF,U+3130-318F,U+A960-A97F,U+AC00-D7AF,U+D7B0-D7FF}
+@font-face{font-family:'InkSerif';src:url(../fonts/lxgw-wenkai.woff2) format('woff2');font-weight:100 599;font-display:swap;unicode-range:U+2E80-2FDF,U+3000-303F,U+3100-312F,U+31C0-31EF,U+3200-33FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FE10-FE1F,U+FE30-FE4F,U+FF00-FFEF,U+20000-2FA1F}
+@font-face{font-family:'InkSerif';src:url(../fonts/lxgw-wenkai-medium.woff2) format('woff2');font-weight:600 900;font-display:swap;unicode-range:U+2E80-2FDF,U+3000-303F,U+3100-312F,U+31C0-31EF,U+3200-33FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FE10-FE1F,U+FE30-FE4F,U+FF00-FFEF,U+20000-2FA1F}
+@font-face{font-family:'InkSans';src:url(../fonts/pretendard.woff2) format('woff2');font-weight:100 900;font-display:swap;unicode-range:U+0000-024F,U+0300-036F,U+1100-11FF,U+1E00-1EFF,U+2000-218F,U+2190-21FF,U+2460-24FF,U+3130-318F,U+A960-A97F,U+AC00-D7AF,U+D7B0-D7FF}
+@font-face{font-family:'InkSans';src:url(../fonts/noto-sans-sc.woff2) format('woff2');font-weight:100 900;font-display:swap;unicode-range:U+2E80-2FDF,U+3000-303F,U+3100-312F,U+31C0-31EF,U+3200-33FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FE10-FE1F,U+FE30-FE4F,U+FF00-FFEF,U+20000-2FA1F}
+/* 중국어 문단의 따옴표·말줄임표·줄표는 중국어 글꼴 모양으로 */
+@font-face{font-family:'InkSerifZhP';src:url(../fonts/lxgw-wenkai.woff2) format('woff2');font-weight:100 599;font-display:swap;unicode-range:U+00B7,U+2014-2015,U+2018-2019,U+201C-201D,U+2026}
+@font-face{font-family:'InkSerifZhP';src:url(../fonts/lxgw-wenkai-medium.woff2) format('woff2');font-weight:600 900;font-display:swap;unicode-range:U+00B7,U+2014-2015,U+2018-2019,U+201C-201D,U+2026}
+@font-face{font-family:'InkSansZhP';src:url(../fonts/noto-sans-sc.woff2) format('woff2');font-weight:100 900;font-display:swap;unicode-range:U+00B7,U+2014-2015,U+2018-2019,U+201C-201D,U+2026}
 
 /* ===== 공통 토큰 ===== */
 :root{
-  --title-ko:'GowunBatang','NotoSerifKR',serif;
-  --title-zh:'NotoSerifSC',serif;
-  --ui:'Pretendard','NotoSansSC',system-ui,sans-serif;
+  --serif:'InkSerif',serif;
+  --title:'InkSerif',serif;
+  --title-ko:var(--title); --title-zh:var(--title); /* 예전 이름(호환용) */
+  --ui:'InkSans',system-ui,sans-serif;
   --r-sm:8px; --r-ctl:12px; --r-card:16px; --r-dlg:20px;
   --ok:#3F8A5A; --warn:#B7791F; --err:#B3402F;
   /* 시작 화면(중립) */
@@ -23,6 +30,9 @@
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
+/* 중국어 문단·화면에서는 공용 문장부호(“”‘’…—·)도 중국어 글꼴 모양으로. 한국어 문단은 원래대로 */
+[lang^="zh"]{--serif:'InkSerifZhP','InkSerif',serif;--title:'InkSerifZhP','InkSerif',serif;--title-ko:var(--title);--title-zh:var(--title);--ui:'InkSansZhP','InkSans',system-ui,sans-serif}
+[lang="ko"]{--serif:'InkSerif',serif;--title:'InkSerif',serif;--title-ko:var(--title);--title-zh:var(--title);--ui:'InkSans',system-ui,sans-serif}
 :root[data-app="diary"]{--bg:#EDEFF3;--surface:#F8F9FB;--ink:#1E2330;--muted:#5F6679;--line:#D8DBE3;--accent:#34437F;--on-accent:#FFFFFF;--soft:#DFE3F3;--accent-text:#34437F;--lamp:#E9A631;--lamp-soft:#F7DFAA;--lamp-glow:rgba(233,166,49,.55)}
 :root[data-app="meal"]{--bg:#EEF3F0;--surface:#F9FBFA;--ink:#1E2320;--muted:#5E6862;--line:#D8E1DB;--accent:#2E6A58;--on-accent:#FFFFFF;--soft:#DCEBE4;--accent-text:#2E6A58}
 :root[data-app="budget"]{--bg:#F9EEF1;--surface:#FDF7F9;--ink:#3B1C2A;--muted:#75525F;--line:#EBCFD9;--accent:#C2416F;--on-accent:#FFF7F9;--soft:#F6DCE5;--accent-text:#A8123F;--err:#A8123F}
@@ -51,8 +61,8 @@ button{cursor:pointer}
 img{max-width:100%}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .num{font-variant-numeric:tabular-nums}
-.t-title{font-family:var(--title-ko);font-weight:700}
-:root[lang^="zh"] .t-title{font-family:var(--title-zh)}
+.t-title{font-family:var(--title);font-weight:700}
+
 
 /* ===== 버튼·입력·칩 ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;border-radius:var(--r-ctl);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;line-height:1.2;white-space:nowrap}
@@ -83,8 +93,7 @@ img{max-width:100%}
 .app-switch:hover{background:var(--soft)}
 .app-glyph{width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
 .app-glyph svg{width:18px;height:18px}
-.app-name{font-family:var(--title-ko);font-weight:700;font-size:19px;white-space:nowrap}
-:root[lang^="zh"] .app-name{font-family:var(--title-zh)}
+.app-name{font-family:var(--title);font-weight:700;font-size:19px;white-space:nowrap}
 .app-switch .chev{width:16px;height:16px;opacity:.6;transition:transform .15s}
 .app-switch[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .appbar .grow{flex:1}
@@ -112,8 +121,7 @@ img{max-width:100%}
 dialog{border:0;border-radius:var(--r-dlg);padding:0;background:var(--surface);color:var(--ink);width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 48px);box-shadow:0 20px 60px rgba(0,0,0,.3)}
 dialog::backdrop{background:rgba(10,12,20,.45)}
 .dlg{padding:22px 22px 18px}
-.dlg h2{font-family:var(--title-ko);font-size:21px;margin:0 0 8px}
-:root[lang^="zh"] .dlg h2{font-family:var(--title-zh)}
+.dlg h2{font-family:var(--title);font-size:21px;margin:0 0 8px}
 .dlg p{margin:0 0 6px;color:var(--muted);font-size:15px}
 .dlg-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:18px}
 .set-sec{padding:16px 0;border-top:1px solid var(--line)}
@@ -130,8 +138,7 @@ dialog::backdrop{background:rgba(10,12,20,.45)}
 /* ===== 잠금 화면 ===== */
 html.locked body > :not(#core-lock):not(.toasts){visibility:hidden}
 #core-lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center}
-#core-lock h1{font-family:var(--title-ko);font-size:28px;margin:0}
-:root[lang^="zh"] #core-lock h1{font-family:var(--title-zh)}
+#core-lock h1{font-family:var(--title);font-size:28px;margin:0}
 #core-lock .lock-msg{color:var(--muted);margin:4px 0 18px;min-height:1.6em}
 .pin-dots{display:flex;gap:14px;margin-bottom:28px}
 .pin-dots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted)}

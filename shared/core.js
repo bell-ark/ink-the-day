@@ -33,7 +33,11 @@ const STR = {
     pinSetDesc: '숫자 4~6자리로 정해 주세요.', lockOffDesc2: '현재 PIN을 입력하면 모든 기기에서 잠금이 꺼져요.',
     pinSetDone: 'PIN을 설정했어요.', pinChanged: 'PIN을 바꿨어요.', lockOffDone: '잠금을 껐어요.',
     account: '계정', signedInAs: '{e}로 로그인됨', signOut: '로그아웃', cancel: '취소', ok: '확인', close: '닫기',
-    errPerm: '저장 권한이 없어요. Firestore 보안 규칙의 UID를 확인해 주세요.', errSave: '저장하지 못했어요. 잠시 후 다시 시도해 주세요.'
+    errPerm: '저장 권한이 없어요. Firestore 보안 규칙의 UID를 확인해 주세요.', errSave: '저장하지 못했어요. 잠시 후 다시 시도해 주세요.',
+    dataTitle: '데이터', wipeDesc: '이 앱의 기록만 지워요. 다른 앱과 테마·잠금 설정은 그대로예요. 누르면 백업 파일을 먼저 내려받아요.',
+    wipeBackingUp: '백업 파일 만드는 중…', wipeBackupFail: '백업 파일을 만들지 못해서 지우지 않았어요. 인터넷 연결을 확인하고 다시 시도해 주세요.',
+    wipeConfirmBody: '방금 백업 파일을 내려받았어요. 지우면 모든 기기에서 사라지고 되돌릴 수 없어요.', wipeWord: '삭제', wipeTypeHint: '계속하려면 아래 칸에 “{w}”를 입력하세요.',
+    wipeGo: '모두 지우기', wiping: '지우는 중…', wipeDone: '모두 지웠어요.', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.'
   },
   zh: {
     syncOk: '已同步', syncBusy: '保存中…', syncOffline: '离线，已存到本机', syncErr: '保存失败', syncLoading: '加载中…', syncLocal: '测试模式',
@@ -48,7 +52,11 @@ const STR = {
     pinSetDesc: '请设为 4～6 位数字。', lockOffDesc2: '输入当前 PIN 后，所有设备都会关闭锁定。',
     pinSetDone: '已设置 PIN。', pinChanged: '已修改 PIN。', lockOffDone: '已关闭锁定。',
     account: '账户', signedInAs: '已登录：{e}', signOut: '退出登录', cancel: '取消', ok: '确定', close: '关闭',
-    errPerm: '没有保存权限，请检查 Firestore 安全规则中的 UID。', errSave: '保存失败，请稍后再试。'
+    errPerm: '没有保存权限，请检查 Firestore 安全规则中的 UID。', errSave: '保存失败，请稍后再试。',
+    dataTitle: '数据', wipeDesc: '只删除这个应用的记录，其他应用以及外观、锁定设置不受影响。点击后会先下载备份文件。',
+    wipeBackingUp: '正在生成备份文件…', wipeBackupFail: '未能生成备份文件，所以没有删除。请检查网络连接后再试。',
+    wipeConfirmBody: '备份文件已下载。删除后所有设备上的记录都会消失，且无法恢复。', wipeWord: '删除', wipeTypeHint: '如要继续，请在下方输入“{w}”。',
+    wipeGo: '全部删除', wiping: '正在删除…', wipeDone: '已全部删除。', needOnline: '请在联网状态下再试。'
   }
 };
 const fmt = (s, v = {}) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
@@ -100,6 +108,8 @@ function makeMock() {
       for (const k of Object.keys(data[col][id])) if (data[col][id][k] === DELETE) delete data[col][id][k];
       save(); emit(col);
     },
+    async get(path) { const [col, id] = splitDoc(path); return (data[col] || {})[id] || null; },
+    async readAll(path) { return Object.entries(data[path] || {}).map(([id, v]) => ({ id, data: v })); },
     async del(path) { const [col, id] = splitDoc(path); if (data[col]) delete data[col][id]; save(); emit(col); },
     async batch(ops) { for (const o of ops) o.del ? await this.del(o.path) : await this.set(o.path, o.val, o.merge); }
   };
@@ -129,12 +139,31 @@ async function makeFirebase() {
     },
     set(path, val, merge) { return F.setDoc(toRef(path), val, merge ? { merge: true } : undefined); },
     del(path) { return F.deleteDoc(toRef(path)); },
+    async get(path) { const snap = await F.getDoc(toRef(path)); return snap.exists() ? snap.data() : null; },
+    // 컬렉션 전체를 서버에서 한 번 읽음(백업·전체 삭제용). 오프라인이면 실패로 알림
+    readAll(path, ms = 20000) {
+      return new Promise((res, rej) => {
+        let done = false, unsub = null;
+        const fin = (fn, v) => { if (done) return; done = true; clearTimeout(timer); if (unsub) unsub(); fn(v); };
+        const timer = setTimeout(() => fin(rej, new Error('offline')), ms);
+        unsub = F.onSnapshot(F.collection(db, path), { includeMetadataChanges: true },
+          snap => { if (!snap.metadata.fromCache) fin(res, snap.docs.map(d => ({ id: d.id, data: d.data() }))); },
+          e => fin(rej, e));
+        if (done) unsub();
+      });
+    },
+    // 한 번에 보내는 양 제한(문서 400개, 약 8MB)에 맞춰 나눠서 저장
     async batch(ops) {
-      for (let i = 0; i < ops.length; i += 400) {
-        const b = F.writeBatch(db);
-        for (const o of ops.slice(i, i + 400)) o.del ? b.delete(toRef(o.path)) : b.set(toRef(o.path), o.val, o.merge ? { merge: true } : undefined);
-        await b.commit();
+      let b = null, n = 0, bytes = 0;
+      const flush = async () => { if (b && n) await b.commit(); b = F.writeBatch(db); n = 0; bytes = 0; };
+      await flush();
+      for (const o of ops) {
+        const size = o.del ? 100 : JSON.stringify(o.val).length + 200;
+        if (n && (n >= 400 || bytes + size > 8e6)) await flush();
+        o.del ? b.delete(toRef(o.path)) : b.set(toRef(o.path), o.val, o.merge ? { merge: true } : undefined);
+        n++; bytes += size;
       }
+      await flush();
     }
   };
 }
@@ -184,6 +213,12 @@ export const removeDoc = (name, id) => track(core.fb.del(`${base()}/${name}/${id
 export const putMany = (name, list) => track(core.fb.batch(list.map(([id, val]) => ({ path: `${base()}/${name}/${id}`, val }))));
 export const removeMany = (name, ids) => track(core.fb.batch(ids.map(id => ({ path: `${base()}/${name}/${id}`, del: true }))));
 export const saveSettings = (name, partial) => track(core.fb.set(`${base()}/settings/${name}`, partial, true));
+// 문서 하나 읽기(없으면 null). 오프라인이면 기기에 저장된 것을 돌려줌
+export const getDoc = (name, id) => core.fb.get(`${base()}/${name}/${id}`);
+// 컬렉션 전체를 서버에서 한 번 읽기: 백업·전체 삭제·보관본 때만 사용
+export const readAll = name => core.fb.readAll(`${base()}/${name}`);
+// 여러 컬렉션에 걸친 쓰기·지우기를 한꺼번에: [{ name, id, val } 또는 { name, id, del: true }]
+export const writeBatch = ops => track(core.fb.batch(ops.map(o => ({ path: `${base()}/${o.name}/${o.id}`, val: o.val, del: !!o.del }))));
 export const deleteField = () => core.mode === 'mock' ? DELETE : core.fb.F.deleteField();
 
 /* ---------- 초기화와 로그인 ---------- */
@@ -276,7 +311,7 @@ function toggleSwitcher() {
   const nav = document.createElement('nav'); nav.className = 'switcher'; nav.id = 'core-switcher'; nav.setAttribute('aria-label', T('switchApp'));
   nav.innerHTML = APPS.map(a => `<a href="${core.root}${a.path}" class="${a.ready ? '' : 'sw-off'}" ${a.key === core.app ? 'aria-current="page"' : ''} ${a.ready ? '' : 'aria-disabled="true" tabindex="-1"'}>
       <span class="sw-glyph" style="background:${a.color};color:${a.on}">${svg(ICON[a.key], 22)}</span>
-      <span class="sw-text"><span class="sw-name" style="font-family:${a.key === 'budget' ? 'var(--title-zh)' : 'var(--title-ko)'}">${esc(a.name[core.lang])}</span><span class="sw-desc">${esc(a.ready ? a.desc[core.lang] : T('soon'))}</span></span>
+      <span class="sw-text"><span class="sw-name" style="font-family:var(--title)" ${a.key === 'budget' ? 'lang="zh-CN"' : ''}>${esc(a.name[core.lang])}</span><span class="sw-desc">${esc(a.ready ? a.desc[core.lang] : T('soon'))}</span></span>
     </a>`).join('') + `<span class="sw-sep"></span>
     <a href="${core.root}index.html">${svg(ICON.home)}<span class="sw-text">${esc(T('home'))}</span></a>
     ${core.lock ? `<button type="button" id="core-lock-now">${svg(ICON.lock)}<span class="sw-text">${esc(T('lockNow'))}</span></button>` : ''}`;
@@ -512,6 +547,53 @@ function renderCommon() {
     <div class="set-sec"><h3>${esc(T('account'))}</h3>
       <p>${esc(fmt(T('signedInAs'), { e: core.user?.email || '' }))}</p>
       <div class="set-row"><button class="btn" data-c="signout">${esc(T('signOut'))}</button></div></div>`;
+}
+
+/* ---------- 데이터 구역: 전체 삭제 (세 앱 공통) ----------
+   opts: { label(): 버튼 글자, count(): 지울 기록 수, backup(): 백업 파일 내려받기(성공하면 true), wipe(): 실제 삭제 } */
+export function mountWipeSection(container, opts) {
+  const render = () => {
+    const n = opts.count();
+    container.innerHTML = `<div class="set-sec"><h3>${esc(T('dataTitle'))}</h3><p>${esc(T('wipeDesc'))}</p>
+      <div class="set-row"><button class="btn danger solid" data-wipe ${n ? '' : 'disabled'}>${esc(opts.label())}</button></div></div>`;
+  };
+  container.addEventListener('click', async e => {
+    if (!e.target.closest('[data-wipe]')) return;
+    container.closest('dialog')?.close();
+    await runWipe(opts);
+  });
+  render();
+  return { render };
+}
+async function runWipe(opts) {
+  const tt = toast(T('wipeBackingUp'), { ms: 0 });
+  let ok = false;
+  try { ok = await opts.backup(); } catch (e) { console.error(e); }
+  tt.dismiss();
+  if (!ok) { toast(T('wipeBackupFail'), { kind: 'err', ms: 8000 }); return; }
+  const word = T('wipeWord');
+  const go = await new Promise(res => {
+    const d = document.createElement('dialog');
+    d.innerHTML = `<div class="dlg"><h2></h2><p></p><p class="wipe-hint"></p>
+      <input class="input" id="wipeInput" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px">
+      <div class="dlg-actions"><button class="btn" data-w="cancel">${esc(T('cancel'))}</button><button class="btn danger solid" data-w="go" disabled>${esc(T('wipeGo'))}</button></div></div>`;
+    d.querySelector('h2').textContent = opts.label();
+    d.querySelector('p').textContent = T('wipeConfirmBody');
+    d.querySelector('.wipe-hint').textContent = fmt(T('wipeTypeHint'), { w: word });
+    const input = d.querySelector('#wipeInput'), btn = d.querySelector('[data-w="go"]');
+    input.placeholder = word;
+    input.addEventListener('input', () => { btn.disabled = input.value.trim() !== word; });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && !btn.disabled) { e.preventDefault(); btn.click(); } });
+    let done = false;
+    const finish = v => { if (done) return; done = true; res(v); if (d.open) d.close(); d.remove(); };
+    d.addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) finish(b.dataset.w === 'go'); });
+    d.addEventListener('close', () => finish(false));
+    document.body.appendChild(d); d.showModal(); input.focus();
+  });
+  if (!go) return;
+  const t2 = toast(T('wiping'), { ms: 0 });
+  try { await opts.wipe(); t2.dismiss(); toast(T('wipeDone')); }
+  catch (e) { t2.dismiss(); console.error(e); toast(e && e.message === 'offline' ? T('needOnline') : T('errSave'), { kind: 'err', ms: 7000 }); }
 }
 
 /* ---------- 오프라인 실행(PWA) ---------- */

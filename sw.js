@@ -1,7 +1,8 @@
 // 오프라인 실행용: 같은 사이트의 파일만 저장해 두고, 다음 접속 때 새 버전으로 갱신
-const VERSION = 'ink-v1';
+const VERSION = 'ink-v2';
 const SHELL = ['./', 'index.html', 'diary/', 'diary/index.html', 'shared/base.css', 'shared/core.js', 'shared/config.js', 'shared/firebase.js',
-  'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'fonts/pretendard.woff2', 'fonts/gowun-batang-400.woff2', 'fonts/gowun-batang-700.woff2'];
+  'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'fonts/pretendard.woff2', 'fonts/gowun-batang-400.woff2', 'fonts/gowun-batang-700.woff2',
+  'fonts/lxgw-wenkai.woff2', 'fonts/lxgw-wenkai-medium.woff2', 'fonts/noto-sans-sc.woff2'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });

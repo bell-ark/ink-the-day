@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="shared/base.css">
 <style>
 .wrap{max-width:560px;margin:0 auto;padding:40px 20px 80px}
-.hello{font-family:var(--title-ko);font-weight:700;font-size:30px;line-height:1.3;margin:0 0 6px}
+.hello{font-family:var(--title);font-weight:700;font-size:30px;line-height:1.3;margin:0 0 6px}
 .sub{color:var(--muted);margin:0 0 28px}
 .tiles{display:grid;gap:12px}
 .tile{display:flex;align-items:center;gap:16px;padding:18px;border-radius:var(--r-card);background:var(--surface);border:1px solid var(--line);color:inherit;text-decoration:none}
@@ -62,7 +62,7 @@ function showHome(user) {
   $('#hello').textContent = h < 11 ? '좋은 아침이에요' : h < 18 ? '좋은 오후예요' : '좋은 저녁이에요';
   $('#tiles').innerHTML = Core.APPS.map(a => `<a class="tile${a.ready ? '' : ' off'}" href="${a.path}" ${a.ready ? '' : 'aria-disabled="true" tabindex="-1"'}>
       <span class="g" style="background:${a.color};color:${a.on}">${Core.svg(a.key === 'diary' ? 'M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7.5h6' : a.key === 'meal' ? 'M3.5 11.5h17a8.5 8.5 0 0 1-17 0ZM9 8c0-1.5 1.5-1.5 1.5-3M13.5 8c0-1.5 1.5-1.5 1.5-3' : 'M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3M4 7.5V17a2 2 0 0 0 2 2h14V9H6.5A2.5 2.5 0 0 1 4 7.5ZM16 14h.01', 26)}</span>
-      <span><span class="n" style="font-family:${a.key === 'budget' ? 'var(--title-zh)' : 'var(--title-ko)'}">${Core.esc(a.name.ko)}</span><span class="d">${Core.esc(a.ready ? a.desc.ko : '곧 옮겨 와요')}</span></span>
+      <span><span class="n" style="font-family:var(--title)" ${a.key === 'budget' ? 'lang="zh-CN"' : ''}>${Core.esc(a.name.ko)}</span><span class="d">${Core.esc(a.ready ? a.desc.ko : '곧 옮겨 와요')}</span></span>
     </a>`).join('');
   Core.mountCommonSettings($('#commonBox'));
 }

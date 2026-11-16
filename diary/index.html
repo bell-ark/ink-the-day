@@ -10,10 +10,8 @@
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 <link rel="stylesheet" href="../shared/base.css">
 <style>
-:root{--body-ko:'GowunBatang',serif;--body-zh:'LXGWWenKai',serif}
 .wrap{max-width:1060px;margin:0 auto;padding:0 16px}
-.t-ko{font-family:var(--title-ko);font-weight:700}
-.t-zh{font-family:var(--title-zh);font-weight:700}
+.t-ko,.t-zh{font-family:var(--title);font-weight:700}
 .greet{padding:20px 0 16px}
 .greet h1{margin:0;font-size:28px;line-height:1.3}
 .greet p{margin:2px 0 0;color:var(--muted);font-size:15px}
@@ -73,7 +71,7 @@
 .entry{display:flex;gap:14px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:14px 2px;align-items:flex-start;color:inherit}
 .entry:hover{background:color-mix(in srgb,var(--soft) 60%,transparent)}
 .e-date{width:40px;flex:none;text-align:center}
-.e-date .d{display:block;font-family:var(--title-ko);font-weight:700;font-size:24px;line-height:1.1}
+.e-date .d{display:block;font-family:var(--title);font-weight:700;font-size:24px;line-height:1.1}
 .e-date .wd{display:block;font-size:12px;color:var(--muted);margin-top:3px}
 .e-body{flex:1;min-width:0}
 .e-body h4{margin:0;font-size:17px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -97,9 +95,14 @@
 .r-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
 .pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--muted);background:var(--surface)}
 button.pill{border:0;background:var(--soft);color:var(--accent-text)}
-.prose{font-size:18px;line-height:1.9;overflow-wrap:anywhere}
-.prose[lang="ko"]{font-family:var(--body-ko);word-break:keep-all}
-.prose[lang^="zh"]{font-family:var(--body-zh);word-break:normal;line-break:strict}
+.prose{font-size:18px;line-height:1.9;overflow-wrap:anywhere;font-family:var(--serif)}
+/* 글꼴은 글자마다 정해지고(base.css), 언어는 문단마다 판별해 줄바꿈 규칙에만 쓴다 */
+.prose [lang]{font-family:var(--serif)}
+.prose[lang="ko"],.prose [lang="ko"]{word-break:keep-all;line-break:auto}
+.prose[lang^="zh"],.prose [lang^="zh"]{word-break:normal;line-break:strict}
+.e-body p[lang],.memory .x[lang]{font-family:var(--ui)}
+.prose img:not([src]){min-height:140px;width:100%;background:var(--soft)}
+.more{display:flex;justify-content:center;padding:18px 0 4px}
 :root[data-theme="dark"] .prose,:root:not([data-theme="light"]) .prose{color:color-mix(in srgb,var(--ink) 92%,var(--muted))}
 .prose p{margin:0 0 .9em}
 .prose h3{font-size:1.15em;line-height:1.5;margin:1.3em 0 .5em}
@@ -111,8 +114,7 @@ button.pill{border:0;background:var(--soft);color:var(--accent-text)}
 .ef{margin-bottom:18px}
 .date-input{min-height:44px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);padding:0 12px;font-size:16px}
 .title-input{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;font-size:26px;font-weight:700;padding:6px 0 10px;outline:none}
-.title-input[lang="ko"]{font-family:var(--title-ko)}
-.title-input[lang^="zh"]{font-family:var(--title-zh)}
+.title-input{font-family:var(--title)}
 .title-input:focus{border-bottom-color:var(--accent)}
 .title-input::placeholder{color:var(--muted);font-weight:400;opacity:.8}
 .picker{display:flex;flex-wrap:wrap;gap:6px}
@@ -133,13 +135,6 @@ button.pill{border:0;background:var(--soft);color:var(--accent-text)}
 .editor{min-height:45vh;padding:16px 18px;outline:none;position:relative}
 .editor.is-empty::before{content:attr(data-placeholder);color:var(--muted);opacity:.8;position:absolute;pointer-events:none}
 .edit-foot{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);margin-top:8px}
-/* 설정 */
-.font-opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:var(--r-card);border:1px solid var(--line);background:var(--bg);cursor:pointer;margin-bottom:8px}
-.font-opt:has(input:checked){border:2px solid var(--accent);padding:11px 13px}
-.font-opt input{margin:4px 0 0;width:18px;height:18px;accent-color:var(--accent);flex:none}
-.font-opt .nm{font-size:15px;font-weight:600}
-.font-opt .nt{font-size:13px;color:var(--muted);font-weight:400}
-.font-opt .sm{display:block;font-size:17px;line-height:1.8;margin-top:2px}
 @media (max-width:520px){
   .greet h1{font-size:24px}
   .r-title{font-size:25px}
@@ -237,7 +232,7 @@ button.pill{border:0;background:var(--soft);color:var(--accent-text)}
   </div>
 </div>
 
-<dialog id="settingsDlg"><div class="dlg"><h2 data-i="settings"></h2><div id="diarySettings"></div><div id="commonBox"></div><div class="dlg-actions"><button class="btn primary" id="settingsClose" data-i="close"></button></div></div></dialog>
+<dialog id="settingsDlg"><div class="dlg"><h2 data-i="settings"></h2><div id="diarySettings"></div><div id="commonBox"></div><div id="wipeBox"></div><div class="dlg-actions"><button class="btn primary" id="settingsClose" data-i="close"></button></div></div></dialog>
 <input type="file" id="importInput" accept=".json,application/json" hidden>
 
 <script type="module">
@@ -270,12 +265,11 @@ const D = {
     leaveTitle: '저장하지 않은 내용이 있어요', leaveBody: '임시 저장해 두면 나중에 목록 위에서 이어 쓸 수 있어요.', keepWriting: '계속 쓰기', discardBtn: '버리기', keepDraft: '임시 저장하고 나가기',
     imgAdding: '사진 {n}장 넣는 중…', imgFail: '이 사진은 읽을 수 없어요. JPG나 PNG로 다시 시도해 주세요.',
     deleted: '일기를 지웠어요.', undo: '되돌리기', restored: '되돌렸어요.',
-    settings: '설정', close: '닫기', uiLang: '화면 언어', fontsTitle: '일기 본문 글꼴', fontsDesc: '일기마다 언어를 알아서 판별해 아래 글꼴로 보여 줘요. 모든 기기에 함께 적용돼요.',
-    koDiary: '한국어 일기', zhDiary: '중국어 일기', noteGowun: '부드럽고 따뜻한 느낌', noteNotoKr: '단정한 책 느낌', noteWenkai: '손글씨 같은 해서체', noteSong: '단정한 책 느낌',
+    settings: '설정', close: '닫기', uiLang: '화면 언어',
     backup: '백업', lastBackup: '마지막 백업: {t}', neverBackup: '아직 이 기기에서 백업한 적이 없어요.', importNote: '이전 일기장에서 내보낸 파일도 가져올 수 있어요.',
-    exportBtn: '내보내기 ({n}편)', importBtn: '가져오기', danger: '위험한 작업', wipe: '모든 일기 지우기',
-    wipeTitle: '일기 {n}편을 모두 지울까요?', wipeBody: '모든 기기에서 지워지고 되돌릴 수 없어요. 먼저 백업 파일을 저장해 두세요.', backupFirst: '백업 먼저', wipeBtn: '모두 지우기', wiped: '모든 일기를 지웠어요.',
-    exporting: '백업 파일 만드는 중…', nothingToExport: '아직 백업할 일기가 없어요.', exported: '백업 파일을 내려받았어요.',
+    exportBtn: '내보내기 ({n}편)', importBtn: '가져오기', wipe: '모든 일기 지우기 ({n}편)',
+    exporting: '백업 파일 만드는 중…', exportFail: '사진을 다 불러오지 못해 백업하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.',
+    more: '더 보기 (남은 {n}편)', migrating: '사진을 새 저장 방식으로 옮기는 중… ({n}편)', migrated: '사진 옮기기를 마쳤어요.', nothingToExport: '아직 백업할 일기가 없어요.', exported: '백업 파일을 내려받았어요.',
     importBad: '백업 파일(.json)을 읽지 못했어요. 내보내기로 만든 파일인지 확인해 주세요.', importNone: '가져올 일기를 찾지 못했어요.', importing: '일기 {n}편 가져오는 중…',
     importDone: '새로 {a}편, 갱신 {u}편을 가져왔어요.', importSkip: ' {n}편은 이미 최신이라 건너뛰었어요.', importBig: ' {n}편은 너무 커서 가져오지 못했어요.',
     ago: { now: '방금', m: '{n}분 전', h: '{n}시간 전', d: '{n}일 전' },
@@ -305,12 +299,11 @@ const D = {
     leaveTitle: '有未保存的内容', leaveBody: '暂存后可以稍后在列表上方继续写。', keepWriting: '继续写', discardBtn: '丢弃', keepDraft: '暂存并离开',
     imgAdding: '正在插入 {n} 张图片…', imgFail: '无法读取这张图片，请换成 JPG 或 PNG 再试。',
     deleted: '已删除日记。', undo: '撤销', restored: '已恢复。',
-    settings: '设置', close: '关闭', uiLang: '界面语言', fontsTitle: '日记正文字体', fontsDesc: '会自动判断每篇日记的语言，并用下面的字体显示。所有设备同时生效。',
-    koDiary: '韩语日记', zhDiary: '中文日记', noteGowun: '柔和温暖', noteNotoKr: '端正的书本感', noteWenkai: '手写感楷体', noteSong: '端正的书本感',
+    settings: '设置', close: '关闭', uiLang: '界面语言',
     backup: '备份', lastBackup: '上次备份：{t}', neverBackup: '这台设备上还没有备份过。', importNote: '也可以导入旧版日记本导出的文件。',
-    exportBtn: '导出（{n} 篇）', importBtn: '导入', danger: '危险操作', wipe: '删除所有日记',
-    wipeTitle: '要删除全部 {n} 篇日记吗？', wipeBody: '所有设备上都会删除，且无法恢复。请先保存备份文件。', backupFirst: '先备份', wipeBtn: '全部删除', wiped: '已删除所有日记。',
-    exporting: '正在生成备份文件…', nothingToExport: '还没有可备份的日记。', exported: '已下载备份文件。',
+    exportBtn: '导出（{n} 篇）', importBtn: '导入', wipe: '删除所有日记（{n} 篇）',
+    exporting: '正在生成备份文件…', exportFail: '图片未能全部加载，备份失败。请检查网络连接后再试。',
+    more: '查看更多（还有 {n} 篇）', migrating: '正在把图片转为新的保存方式…（{n} 篇）', migrated: '图片转移完成。', nothingToExport: '还没有可备份的日记。', exported: '已下载备份文件。',
     importBad: '无法读取备份文件（.json），请确认是导出的文件。', importNone: '没有找到可导入的日记。', importing: '正在导入 {n} 篇日记…',
     importDone: '新增 {a} 篇，更新 {u} 篇。', importSkip: '{n} 篇已是最新，已跳过。', importBig: '{n} 篇太大，未能导入。',
     ago: { now: '刚刚', m: '{n} 分钟前', h: '{n} 小时前', d: '{n} 天前' },
@@ -319,15 +312,17 @@ const D = {
 };
 const MOODS = [{e:'😄',s:5},{e:'🙂',s:4},{e:'😌',s:4},{e:'😐',s:3},{e:'😔',s:2},{e:'😣',s:1},{e:'😠',s:1}];
 const WEATHERS = ['☀️','⛅','☁️','🌧️','❄️','🌫️','💨'];
-const FONTS = { ko: { gowun: "'GowunBatang',serif", noto: "'NotoSerifKR',serif" }, zh: { wenkai: "'LXGWWenKai',serif", song: "'NotoSerifSC',serif" } };
 const DOC_LIMIT = 900 * 1024;
+const PHOTOS = 'diaryPhotos';   // 사진은 일기 문서와 따로, 사진 1장 = 문서 1개 { entry, src, createdAt }
+const PAGE = 20;                // 목록은 20편씩 끊어 보여 줌
 
 /* ===================== 상태 ===================== */
-const cfg = Object.assign({ uiLang: 'ko', fontKo: 'gowun', fontZh: 'wenkai' }, LS.get('diary.settings', {}));
+const cfg = { uiLang: LS.get('diary.settings', {}).uiLang === 'zh' ? 'zh' : 'ko' };
 let L = D[cfg.uiLang] || D.ko;
 const t = (k, v = {}) => String(k.split('.').reduce((o, p) => o?.[p], L) ?? k).replace(/\{(\w+)\}/g, (_, x) => v[x] ?? '');
-const state = { entries: {}, loaded: false, view: 'home', currentId: null, filter: { q: '', date: null, tag: null }, cal: { y: new Date().getFullYear(), m: new Date().getMonth() } };
-let edit = null;
+const state = { entries: {}, loaded: false, view: 'home', currentId: null, filter: { q: '', date: null, tag: null }, limit: PAGE, cal: { y: new Date().getFullYear(), m: new Date().getMonth() } };
+const photoCache = new Map();   // 사진 ID → 이미지 데이터(이번 실행 동안만)
+let edit = null, wipeUI = null;
 
 /* ===================== 도우미 ===================== */
 const $ = s => document.querySelector(s);
@@ -342,10 +337,19 @@ const moodIdx = e => MOODS.findIndex(m => m.e === e);
 const moodLabel = e => { const i = moodIdx(e); return i >= 0 ? L.moods[i] : ''; };
 const weatherLabel = e => { const i = WEATHERS.indexOf(e); return i >= 0 ? L.weathers[i] : ''; };
 const timeAgo = ts => { const m = Math.round((Date.now() - ts) / 60000); if (m < 1) return L.ago.now; if (m < 60) return t('ago.m', { n: m }); const h = Math.round(m / 60); if (h < 24) return t('ago.h', { n: h }); return t('ago.d', { n: Math.round(h / 24) }); };
-function detectLang(text) {
+function detectLang(text, fallback = cfg.uiLang) {
   const h = (text.match(/[\uAC00-\uD7A3]/g) || []).length, c = (text.match(/[\u4E00-\u9FFF]/g) || []).length;
-  if (!h && !c) return cfg.uiLang;
+  if (!h && !c) return fallback;
   return c > h ? 'zh' : 'ko';
+}
+/* 문단마다 언어를 판별해 lang을 붙임: 줄바꿈 규칙(한국어 단어 단위, 중국어 글자 단위)에만 쓰임.
+   글자가 없는 문단은 일기 전체 언어를 따름. 저장할 때는 지워짐(sanitizeHTML) */
+function markBlocks(root, base) {
+  for (const b of root.querySelectorAll('p,li,h3,blockquote')) {
+    if (b.querySelector('p,li,h3')) { b.removeAttribute('lang'); continue; }
+    const lg = detectLang(b.textContent, '');
+    if (lg && lg !== base) b.setAttribute('lang', htmlLang(lg)); else b.removeAttribute('lang');
+  }
 }
 const titleClass = lang => lang === 'zh' ? 't-zh' : 't-ko';
 const htmlLang = lang => lang === 'zh' ? 'zh-CN' : 'ko';
@@ -354,7 +358,8 @@ const htmlLang = lang => lang === 'zh' ? 'zh-CN' : 'ko';
 const TAGS = { P:'p',BR:'br',B:'b',STRONG:'b',I:'i',EM:'i',U:'u',S:'s',STRIKE:'s',DEL:'s',H1:'h3',H2:'h3',H3:'h3',H4:'h3',UL:'ul',OL:'ol',LI:'li',BLOCKQUOTE:'blockquote',IMG:'img',A:'a',DIV:'p' };
 const DROP = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','TEMPLATE','NOSCRIPT','SVG','MATH','VIDEO','AUDIO','FORM','INPUT','BUTTON','SELECT','TEXTAREA','LINK','META','HEAD','TITLE']);
 const safeImg = s => { s = (s || '').trim(); return /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(s) ? s.replace(/\s+/g, '') : null; };
-function sanitizeHTML(html) {
+const safePid = s => /^[A-Za-z0-9_\-]{1,160}$/.test(s || '') ? s : null;
+function sanitizeHTML(html, { keepPid = true } = {}) {
   const doc = new DOMParser().parseFromString('<!doctype html><body>' + String(html || ''), 'text/html');
   const out = document.createElement('div');
   (function walk(src, dst) {
@@ -364,7 +369,13 @@ function sanitizeHTML(html) {
       const name = TAGS[n.tagName];
       if (!name) { walk(n, dst); continue; }
       const el = document.createElement(name);
-      if (name === 'img') { const s = safeImg(n.getAttribute('src')); if (!s) continue; el.setAttribute('src', s); el.setAttribute('alt', ''); dst.appendChild(el); continue; }
+      if (name === 'img') {
+        const s = safeImg(n.getAttribute('src')), pid = keepPid ? safePid(n.getAttribute('data-pid')) : null;
+        if (!s && !pid) continue;
+        if (s) el.setAttribute('src', s);
+        if (pid) el.setAttribute('data-pid', pid);
+        el.setAttribute('alt', ''); dst.appendChild(el); continue;
+      }
       if (name === 'a') { const h = (n.getAttribute('href') || '').trim(); if (/^(https?:|mailto:)/i.test(h)) { el.setAttribute('href', h); el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); } }
       walk(n, el); dst.appendChild(el);
     }
@@ -377,7 +388,6 @@ function htmlToText(html) {
   doc.querySelectorAll('p,li,h3,blockquote').forEach(b => b.append('\n'));
   return doc.body.textContent.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
-const firstImg = html => { const m = /<img[^>]+src="([^"]+)"/.exec(html || ''); return m ? m[1] : null; };
 const displayTitle = e => e.title || (e.text || '').split('\n').find(l => l.trim())?.slice(0, 40) || t('photoDiary');
 
 function normalize(raw, idHint) {
@@ -392,10 +402,89 @@ function normalize(raw, idHint) {
     mood: String(raw.mood || '').slice(0, 8), weather: String(raw.weather || '').slice(0, 8),
     tags: Array.isArray(raw.tags) ? [...new Set(raw.tags.map(x => String(x).replace(/^#/, '').trim().slice(0, 30)).filter(Boolean))].slice(0, 10) : [],
     lang: raw.lang === 'zh' || raw.lang === 'ko' ? raw.lang : detectLang((raw.title || '') + text),
+    photos: Array.isArray(raw.photos) ? raw.photos.map(safePid).filter(Boolean) : [],
+    thumb: safeImg(raw.thumb) || '',
     createdAt: Number(raw.createdAt) || ts, updatedAt: Number(raw.updatedAt) || ts
   };
 }
-const toDoc = e => { const { id, ...rest } = e; return { ...rest, v: 3 }; };
+const toDoc = e => { const { id, ...rest } = e; return { ...rest, v: 4 }; };
+const hasInline = e => /<img[^>]*src="data:image/.test(e.html);
+
+/* ===================== 사진(별도 컬렉션) =====================
+   일기 본문에는 <img data-pid="사진ID">만 남기고, 사진 데이터는 diaryPhotos에 1장씩 저장.
+   목록 썸네일용 작은 그림(thumb)만 일기 문서에 넣어 달력·목록·검색이 사진을 읽지 않게 함. */
+const newPid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+async function loadPhotos(pids) {
+  const need = [...new Set(pids)].filter(id => id && !photoCache.has(id));
+  for (let i = 0; i < need.length; i += 8) {
+    await Promise.all(need.slice(i, i + 8).map(async id => {
+      // 연결이 막힌 곳(중국 본토 등)에서 오래 기다리지 않도록 8초까지만
+      const timeout = new Promise(res => setTimeout(() => res(null), 8000));
+      try { const d = await Promise.race([Core.getDoc(PHOTOS, id), timeout]); if (d && safeImg(d.src)) photoCache.set(id, safeImg(d.src)); } catch (e) { console.warn(e); }
+    }));
+  }
+  return pids.every(id => photoCache.has(id));
+}
+// 화면에 붙은 img[data-pid]에 사진을 채움(없으면 회색 자리만)
+function fillPhotos(root, isCurrent = () => true) {
+  const imgs = [...root.querySelectorAll('img[data-pid]:not([src])')];
+  const set = () => imgs.forEach(im => { const s = photoCache.get(im.dataset.pid); if (s) im.src = s; });
+  set();
+  const missing = imgs.filter(im => !im.src).map(im => im.dataset.pid);
+  if (missing.length) loadPhotos(missing).then(() => { if (isCurrent()) set(); });
+}
+// 저장용 HTML에서 사진 분리: src를 빼고 data-pid만 남김.
+// writeAll=false면 이미 ID가 있는 사진은 다시 쓰지 않음(편집 저장), true면 src가 있는 사진은 모두 씀(가져오기·이전)
+async function splitPhotos(entry, makePid, writeAll) {
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + entry.html, 'text/html');
+  const docs = [], pids = []; let i = 0;
+  for (const img of doc.querySelectorAll('img')) {
+    const src = safeImg(img.getAttribute('src')); let pid = safePid(img.getAttribute('data-pid'));
+    if (src) {
+      const isNew = !pid;
+      if (!pid) pid = makePid(i);
+      if (isNew || writeAll) docs.push([pid, { entry: entry.id, src, createdAt: Date.now() }]);
+      photoCache.set(pid, src);
+      img.removeAttribute('src'); img.setAttribute('data-pid', pid);
+    }
+    if (pid) pids.push(pid);
+    i++;
+  }
+  const html = sanitizeHTML(doc.body.innerHTML);
+  const photos = [...new Set(pids)];
+  let thumb = entry.thumb || '';
+  if (!photos.length) thumb = '';
+  else if (!thumb || photos[0] !== (entry.photos || [])[0]) {
+    const src = photoCache.get(photos[0]);
+    if (src) { try { thumb = await compressToDataURL(dataURLtoBlob(src), 160, 0.6); } catch { thumb = ''; } }
+  }
+  return { entry: { ...entry, html, text: htmlToText(html), photos, thumb }, docs };
+}
+// 사진을 다시 본문에 넣은 HTML(편집기·백업용)
+function inlinePhotos(html) {
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + html, 'text/html');
+  doc.querySelectorAll('img[data-pid]').forEach(im => { const s = photoCache.get(im.dataset.pid); if (s) im.setAttribute('src', s); });
+  return doc.body.innerHTML;
+}
+// 예전 방식(본문 안에 사진)으로 저장된 일기를 자동으로 옮김. 같은 일기는 어느 기기가 옮겨도 같은 결과(ID 고정)
+let migrating = false, migrateAgain = false;
+async function migrateInline() {
+  if (migrating) { migrateAgain = true; return; }
+  const list = Object.values(state.entries).filter(hasInline); if (!list.length) return;
+  migrating = true;
+  const tt = list.length > 1 ? toast(t('migrating', { n: list.length }), { ms: 0 }) : null;
+  try {
+    for (const e of list) {
+      const { entry, docs } = await splitPhotos(e, i => `m-${e.id}-${i}`, true);
+      if (byteSize(toDoc(entry)) > DOC_LIMIT) continue;
+      await Core.writeBatch([...docs.map(([id, val]) => ({ name: PHOTOS, id, val })), { name: 'diary', id: entry.id, val: toDoc(entry) }]);
+      state.entries[entry.id] = entry;
+    }
+    if (tt) { tt.dismiss(); toast(t('migrated')); }
+  } catch (err) { tt?.dismiss(); console.error(err); }
+  migrating = false;
+  if (migrateAgain) { migrateAgain = false; migrateInline(); }
+}
 
 /* ===================== 화면 전환 ===================== */
 function show(view) {
@@ -429,17 +518,15 @@ function applyLang() {
   if (edit) { syncPickers(); renderTags(); onEditorInput(true); $('#editHeading').textContent = edit.id ? t('editTitle') : t('newTitle'); }
   refreshVisible();
 }
-function applyFonts() {
-  document.documentElement.style.setProperty('--body-ko', FONTS.ko[cfg.fontKo] || FONTS.ko.gowun);
-  document.documentElement.style.setProperty('--body-zh', FONTS.zh[cfg.fontZh] || FONTS.zh.wenkai);
-}
 
 /* ===================== 홈 ===================== */
 function sortedEntries() { return Object.values(state.entries).sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0)); }
 function entriesByDate() { const m = {}; for (const e of sortedEntries()) (m[e.date] ||= []).push(e); return m; }
 function streak(by) { const d = new Date(); if (!by[fmtDate(d)]) d.setDate(d.getDate() - 1); let n = 0; while (by[fmtDate(d)]) { n++; d.setDate(d.getDate() - 1); } return n; }
 
+let lastFilterKey = '';
 function renderHome() {
+  const fk = JSON.stringify(state.filter); if (fk !== lastFilterKey) { lastFilterKey = fk; state.limit = PAGE; }
   const by = entriesByDate(), now = new Date(), today = todayStr();
   $('#greetTitle').textContent = L.mdw(now.getMonth()+1, now.getDate(), L.wd[now.getDay()]);
   $('#greetSub').textContent = by[today] ? t('todayHas', { n: by[today].length }) : t('todayNone');
@@ -522,13 +609,15 @@ function renderList() {
   if (!Object.keys(state.entries).length) {
     list.innerHTML = `<div class="empty"><h3 class="t-title">${esc(t('emptyTitle'))}</h3><p>${esc(t('emptyBody'))}</p><button class="btn primary" data-write-date="${todayStr()}">${esc(t('emptyBtn'))}</button></div>`; return;
   }
-  const items = filtered();
-  if (!items.length) { list.innerHTML = `<div class="empty"><p>${esc(t('noMatch'))}</p><button class="btn" data-clear="all">${esc(t('clearAll'))}</button></div>`; return; }
+  const all = filtered();
+  if (!all.length) { list.innerHTML = `<div class="empty"><p>${esc(t('noMatch'))}</p><button class="btn" data-clear="all">${esc(t('clearAll'))}</button></div>`; return; }
+  const items = all.slice(0, state.limit), monthTotal = {};
+  for (const e of all) monthTotal[e.date.slice(0, 7)] = (monthTotal[e.date.slice(0, 7)] || 0) + 1;
   const groups = {}; for (const e of items) (groups[e.date.slice(0, 7)] ||= []).push(e);
   list.innerHTML = Object.entries(groups).map(([ym, arr]) => {
     const [y, m] = ym.split('-');
-    return `<section class="month"><div class="month-h"><h3 class="t-title">${esc(L.ym(+y, +m))}</h3><span>${esc(t('count', { n: arr.length }))}</span></div>` + arr.map(e => {
-      const d = parseDate(e.date), img = firstImg(e.html), lg = htmlLang(e.lang);
+    return `<section class="month"><div class="month-h"><h3 class="t-title">${esc(L.ym(+y, +m))}</h3><span>${esc(t('count', { n: monthTotal[ym] }))}</span></div>` + arr.map(e => {
+      const d = parseDate(e.date), img = e.thumb || (hasInline(e) ? (/<img[^>]+src="([^"]+)"/.exec(e.html) || [])[1] : ''), lg = htmlLang(e.lang);
       const ex = e.title ? (e.text || '') : (e.text || '').split('\n').slice(1).join(' ');
       return `<button class="entry" data-open="${esc(e.id)}">
         <div class="e-date"><span class="d">${d.getDate()}</span><span class="wd">${L.wd[d.getDay()]}</span></div>
@@ -537,7 +626,7 @@ function renderList() {
           <div class="e-meta">${e.mood ? `<span>${esc(e.mood)}</span>` : ''}${e.weather ? `<span>${esc(e.weather)}</span>` : ''}${e.tags.map(x => `<span>#${esc(x)}</span>`).join('')}</div></div>
         ${img ? `<img class="thumb" src="${esc(img)}" alt="" loading="lazy">` : ''}</button>`;
     }).join('') + `</section>`;
-  }).join('');
+  }).join('') + (all.length > items.length ? `<div class="more"><button class="btn" data-more>${esc(t('more', { n: all.length - items.length }))}</button></div>` : '');
 }
 function renderDraftBanner() { $('#draftBanner').hidden = !(LS.get('diary.draft', null) && state.view === 'home'); }
 
@@ -553,7 +642,8 @@ function renderRead() {
   if (e.weather) meta.insertAdjacentHTML('beforeend', `<span class="pill">${esc(e.weather)} ${esc(weatherLabel(e.weather))}</span>`);
   for (const x of e.tags) { const b = document.createElement('button'); b.className = 'pill'; b.textContent = '#' + x; b.dataset.tag = x; b.setAttribute('aria-label', t('tagAria', { t: x })); meta.appendChild(b); }
   meta.hidden = !meta.childElementCount;
-  const c = $('#readContent'); c.innerHTML = sanitizeHTML(e.html); c.lang = lg;
+  const c = $('#readContent'); c.innerHTML = sanitizeHTML(e.html); c.lang = lg; markBlocks(c, e.lang);
+  const id = e.id; fillPhotos(c, () => state.view === 'read' && state.currentId === id);
   $('#readFoot').textContent = t('lastEdited', { t: L.clock(new Date(e.updatedAt)) });
 }
 
@@ -594,36 +684,44 @@ function renderTags() {
   }
 }
 function addTag(raw) { const x = String(raw).replace(/^#/, '').replace(/,/g, '').trim().slice(0, 30); if (x && !edit.tags.includes(x) && edit.tags.length < 10) { edit.tags.push(x); renderTags(); scheduleDraft(); } }
-const formState = () => ({ date: $('#dateInput').value, title: $('#titleInput').value, html: editor.innerHTML, mood: edit.mood, weather: edit.weather, tags: [...edit.tags] });
+const formState = () => ({ date: $('#dateInput').value, title: $('#titleInput').value, html: sanitizeHTML(editor.innerHTML), mood: edit.mood, weather: edit.weather, tags: [...edit.tags] });
 const snap = () => JSON.stringify(formState());
 const isDirty = () => edit && snap() !== edit.snap;
 function setEditorLang() {
   const lg = detectLang($('#titleInput').value + editor.textContent);
-  editor.lang = htmlLang(lg); $('#titleInput').lang = htmlLang(lg);
+  editor.lang = htmlLang(lg); $('#titleInput').lang = detectLang($('#titleInput').value, lg) === 'zh' ? 'zh-CN' : 'ko';
+  markBlocks(editor, lg);
 }
-function openEditor(id, presetDate) {
+async function openEditor(id, presetDate) {
   const e = id ? state.entries[id] : null, draft = LS.get('diary.draft', null);
-  const src = e ? { date: e.date, title: e.title, html: e.html, mood: e.mood, weather: e.weather, tags: e.tags } : { date: presetDate || todayStr(), title: '', html: '', mood: '', weather: '', tags: [] };
+  if (e && e.photos.length) await loadPhotos(e.photos);
+  const src = e ? { date: e.date, title: e.title, html: inlinePhotos(e.html), mood: e.mood, weather: e.weather, tags: e.tags } : { date: presetDate || todayStr(), title: '', html: '', mood: '', weather: '', tags: [] };
   edit = { id: id || null, mood: src.mood || '', weather: src.weather || '', tags: [...(src.tags || [])], snap: '' };
-  $('#dateInput').value = src.date; $('#titleInput').value = src.title; editor.innerHTML = sanitizeHTML(src.html);
+  $('#dateInput').value = src.date; $('#titleInput').value = src.title; editor.innerHTML = sanitizeHTML(src.html) || '<p><br></p>';
   edit.snap = snap();
   let restored = false;
   if (draft && (draft.forId || null) === edit.id && (!e || draft.savedAt > (e.updatedAt || 0))) {
-    $('#dateInput').value = draft.date || src.date; $('#titleInput').value = draft.title || ''; editor.innerHTML = sanitizeHTML(draft.html || '');
+    $('#dateInput').value = draft.date || src.date; $('#titleInput').value = draft.title || ''; editor.innerHTML = sanitizeHTML(inlinePhotos(draft.html || ''));
     edit.mood = draft.mood || ''; edit.weather = draft.weather || ''; edit.tags = draft.tags || []; restored = true;
   }
   $('#editHeading').textContent = id ? t('editTitle') : t('newTitle');
-  syncPickers(); renderTags(); setEditorLang(); onEditorInput(true);
+  syncPickers(); renderTags(); setEditorLang(); fillPhotos(editor); onEditorInput(true);
   $('#draftState').textContent = restored ? t('draftLoaded') : t('draftHint');
   show('edit');
   if (!id && !restored) $('#titleInput').focus({ preventScroll: true });
+}
+// 임시 저장: 이미 저장된 사진은 ID만, 새로 넣은 사진만 데이터째 보관
+function draftHTML() {
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + sanitizeHTML(editor.innerHTML), 'text/html');
+  doc.querySelectorAll('img[data-pid][src]').forEach(im => im.removeAttribute('src'));
+  return doc.body.innerHTML;
 }
 function scheduleDraft() {
   clearTimeout(draftTimer);
   draftTimer = setTimeout(() => {
     if (!edit) return;
     if (!isDirty()) { LS.del('diary.draft'); return; }
-    const ok = LS.set('diary.draft', { forId: edit.id, ...formState(), html: sanitizeHTML(editor.innerHTML), savedAt: Date.now() });
+    const ok = LS.set('diary.draft', { forId: edit.id, ...formState(), html: draftHTML(), savedAt: Date.now() });
     $('#draftState').textContent = ok ? t('draftSaved', { t: L.hm(new Date()) }) : t('draftFull');
   }, 600);
 }
@@ -641,10 +739,12 @@ async function saveEdit() {
   const date = $('#dateInput').value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { toast(t('needDate'), { kind: 'err' }); $('#dateInput').focus(); return; }
   const prev = edit.id ? state.entries[edit.id] : null, now = Date.now(), title = $('#titleInput').value.trim().slice(0, 200);
-  const entry = { id: edit.id || newId(), date, html, text, title, mood: edit.mood, weather: edit.weather, tags: [...edit.tags], lang: detectLang(title + text), createdAt: prev ? prev.createdAt : now, updatedAt: now };
-  if (byteSize(entry) > DOC_LIMIT) { toast(t('tooBig'), { kind: 'err', ms: 7000 }); return; }
+  const draftEntry = { id: edit.id || newId(), date, html, text, title, mood: edit.mood, weather: edit.weather, tags: [...edit.tags], lang: detectLang(title + text), photos: prev ? prev.photos : [], thumb: prev ? prev.thumb : '', createdAt: prev ? prev.createdAt : now, updatedAt: now };
+  const { entry, docs } = await splitPhotos(draftEntry, () => newPid(), false);
+  if (byteSize(toDoc(entry)) > DOC_LIMIT || docs.some(([, d]) => byteSize(d) > DOC_LIMIT)) { toast(t('tooBig'), { kind: 'err', ms: 7000 }); return; }
+  const gone = (prev ? prev.photos : []).filter(id => !entry.photos.includes(id));
   state.entries[entry.id] = entry;
-  Core.putDoc('diary', entry.id, toDoc(entry)).catch(() => {});
+  Core.writeBatch([...docs.map(([id, val]) => ({ name: PHOTOS, id, val })), { name: 'diary', id: entry.id, val: toDoc(entry) }, ...gone.map(id => ({ name: PHOTOS, id, del: true }))]).catch(() => {});
   clearTimeout(draftTimer); LS.del('diary.draft'); edit = null;
   openRead(entry.id); toast(t('saved'));
 }
@@ -653,7 +753,7 @@ async function leaveEdit() {
     const v = await ask({ title: t('leaveTitle'), body: t('leaveBody'), actions: [{ label: t('keepWriting'), value: null }, { label: t('discardBtn'), kind: 'danger', value: 'discard' }, { label: t('keepDraft'), kind: 'primary', value: 'keep' }] });
     if (!v) return;
     clearTimeout(draftTimer);
-    if (v === 'discard') LS.del('diary.draft'); else LS.set('diary.draft', { forId: edit.id, ...formState(), html: sanitizeHTML(editor.innerHTML), savedAt: Date.now() });
+    if (v === 'discard') LS.del('diary.draft'); else LS.set('diary.draft', { forId: edit.id, ...formState(), html: draftHTML(), savedAt: Date.now() });
   } else { clearTimeout(draftTimer); LS.del('diary.draft'); }
   const id = edit && edit.id; edit = null;
   if (id && state.entries[id]) openRead(id); else { show('home'); renderHome(); }
@@ -689,7 +789,7 @@ editor.addEventListener('paste', e => {
   const cd = e.clipboardData; if (!cd) return;
   const files = [...cd.files].filter(f => f.type.startsWith('image/'));
   if (files.length) { e.preventDefault(); insertImages(files); return; }
-  const html = cd.getData('text/html'); if (html) { e.preventDefault(); document.execCommand('insertHTML', false, sanitizeHTML(html)); return; }
+  const html = cd.getData('text/html'); if (html) { e.preventDefault(); document.execCommand('insertHTML', false, sanitizeHTML(html, { keepPid: false })); return; }
   const text = cd.getData('text/plain'); if (text) { e.preventDefault(); document.execCommand('insertText', false, text); }
 });
 editor.addEventListener('drop', e => { const files = [...(e.dataTransfer?.files || [])].filter(f => f.type.startsWith('image/')); if (files.length) { e.preventDefault(); insertImages(files); } });
@@ -726,19 +826,34 @@ async function shrinkImages(entry) {
 }
 
 /* ===================== 지우기·백업 ===================== */
-function deleteEntry(id) {
+async function deleteEntry(id) {
   const copy = state.entries[id]; if (!copy) return;
-  delete state.entries[id]; Core.removeDoc('diary', id).catch(() => {});
+  // 되돌리기에 쓰려고 사진을 먼저 확보. 확보하지 못한 사진은 지우지 않고 남겨 둠(기록 손실 방지)
+  await loadPhotos(copy.photos);
+  const saved = copy.photos.filter(p => photoCache.has(p));
+  delete state.entries[id];
+  Core.writeBatch([{ name: 'diary', id, del: true }, ...saved.map(p => ({ name: PHOTOS, id: p, del: true }))]).catch(() => {});
   show('home'); renderHome();
-  toast(t('deleted'), { action: t('undo'), ms: 8000, onAction: () => { const e = { ...copy, updatedAt: Date.now() }; state.entries[id] = e; Core.putDoc('diary', id, toDoc(e)).catch(() => {}); renderHome(); toast(t('restored')); } });
+  toast(t('deleted'), { action: t('undo'), ms: 8000, onAction: () => {
+    const e = { ...copy, updatedAt: Date.now() }; state.entries[id] = e;
+    Core.writeBatch([...saved.map(p => ({ name: PHOTOS, id: p, val: { entry: id, src: photoCache.get(p), createdAt: Date.now() } })), { name: 'diary', id, val: toDoc(e) }]).catch(() => {});
+    renderHome(); toast(t('restored'));
+  } });
 }
-function exportAll() {
-  const list = sortedEntries(); if (!list.length) { toast(t('nothingToExport')); return; }
-  const json = JSON.stringify({ app: 'bitjupgi', version: 3, exportedAt: new Date().toISOString(), entries: list });
+// 백업 파일: 사진을 본문 안에 다시 넣어 파일 하나로 완결. 사진을 다 못 불러오면 실패(true/false 반환)
+async function exportAll() {
+  const list = sortedEntries(); if (!list.length) { toast(t('nothingToExport')); return false; }
+  const tt = toast(t('exporting'), { ms: 0 });
+  const ok = await loadPhotos(list.flatMap(e => e.photos));
+  tt.dismiss();
+  if (!ok) { toast(t('exportFail'), { kind: 'err', ms: 8000 }); return false; }
+  const out = list.map(({ thumb, photos, ...e }) => ({ ...e, html: inlinePhotos(e.html) }));
+  const json = JSON.stringify({ app: 'bitjupgi', version: 4, exportedAt: new Date().toISOString(), entries: out });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
   a.download = `diary-backup-${todayStr()}.json`; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   LS.set('diary.lastBackup', Date.now()); toast(t('exported'));
+  return true;
 }
 async function importFile(file) {
   let raw; try { raw = JSON.parse(await file.text()); } catch { toast(t('importBad'), { kind: 'err', ms: 6000 }); return; }
@@ -748,42 +863,36 @@ async function importFile(file) {
   const tt = toast(t('importing', { n: list.length }), { ms: 0 });
   let a = 0, u = 0, skip = 0, big = 0; const writes = [];
   for (const r of list) {
-    const e = await shrinkImages(normalize(r));
-    if (byteSize(e) > DOC_LIMIT) { big++; continue; }
-    const cur = state.entries[e.id];
-    if (cur && (cur.updatedAt || 0) >= e.updatedAt) { skip++; continue; }
-    cur ? u++ : a++; state.entries[e.id] = e; writes.push([e.id, toDoc(e)]);
+    const n = await shrinkImages(normalize(r));
+    const cur = state.entries[n.id];
+    if (cur && (cur.updatedAt || 0) >= n.updatedAt) { skip++; continue; }
+    const { entry: e, docs } = await splitPhotos({ ...n, photos: [], thumb: '' }, i => `m-${n.id}-${i}`, true);
+    if (byteSize(toDoc(e)) > DOC_LIMIT || docs.some(([, d]) => byteSize(d) > DOC_LIMIT)) { big++; continue; }
+    cur ? u++ : a++; state.entries[e.id] = e;
+    writes.push(...docs.map(([id, val]) => ({ name: PHOTOS, id, val })), { name: 'diary', id: e.id, val: toDoc(e) });
   }
-  if (writes.length) Core.putMany('diary', writes).catch(() => {});
+  if (writes.length) Core.writeBatch(writes).catch(() => {});
   tt.dismiss(); renderHome();
   toast(t('importDone', { a, u }) + (skip ? t('importSkip', { n: skip }) : '') + (big ? t('importBig', { n: big }) : ''), { ms: 7000 });
 }
-async function deleteAll() {
-  const ids = Object.keys(state.entries); if (!ids.length) return;
-  const v = await ask({ title: t('wipeTitle', { n: ids.length }), body: t('wipeBody'), actions: [{ label: t('cancel'), value: null }, { label: t('backupFirst'), value: 'backup' }, { label: t('wipeBtn'), kind: 'danger solid', value: 'del' }] });
-  if (v === 'backup') { exportAll(); return; }
-  if (v !== 'del') return;
+// 전체 삭제(공통 모듈이 백업 → 직접 입력 확인 → 이 함수 순서로 부름): 일기와 사진만, 설정은 그대로
+async function wipeDiary() {
+  const photos = await Core.readAll(PHOTOS);
+  const ids = Object.keys(state.entries);
+  await Core.writeBatch([...ids.map(id => ({ name: 'diary', id, del: true })), ...photos.map(p => ({ name: PHOTOS, id: p.id, del: true }))]);
   for (const id of ids) delete state.entries[id];
-  Core.removeMany('diary', ids).catch(() => {});
-  renderHome(); toast(t('wiped'));
+  photoCache.clear(); renderHome();
 }
 
 /* ===================== 설정 ===================== */
 function renderSettings() {
   const n = Object.keys(state.entries).length, last = LS.get('diary.lastBackup', null);
-  const opt = (group, val, name, note, fam, sample, lang) => `<label class="font-opt"><input type="radio" name="${group}" value="${val}" ${cfg[group] === val ? 'checked' : ''}><span><span class="nm">${name} <span class="nt">${esc(note)}</span></span><span class="sm" lang="${lang}" style="font-family:${fam};${lang === 'ko' ? 'word-break:keep-all' : ''}">${sample}</span></span></label>`;
-  const koS = '퇴근길에 첫눈이 내렸다. 우산 없이 천천히 걸어서 집까지 왔다.', zhS = '下班路上下了第一场雪。我没有打伞，慢慢走回了家。';
   $('#diarySettings').innerHTML = `
     <div class="set-sec"><h3>${esc(t('uiLang'))}</h3><div class="seg" role="group" aria-label="${esc(t('uiLang'))}">
-      <button data-ui="ko" aria-pressed="${cfg.uiLang === 'ko'}">한국어</button><button data-ui="zh" aria-pressed="${cfg.uiLang === 'zh'}">中文</button></div></div>
-    <div class="set-sec"><h3>${esc(t('fontsTitle'))}</h3><p>${esc(t('fontsDesc'))}</p>
-      <p style="font-weight:600;color:var(--ink);margin-top:10px">${esc(t('koDiary'))}</p>
-      ${opt('fontKo', 'gowun', '고운바탕', t('noteGowun'), FONTS.ko.gowun, koS, 'ko')}${opt('fontKo', 'noto', '본명조', t('noteNotoKr'), FONTS.ko.noto, koS, 'ko')}
-      <p style="font-weight:600;color:var(--ink);margin-top:10px">${esc(t('zhDiary'))}</p>
-      ${opt('fontZh', 'wenkai', '霞鹜文楷', t('noteWenkai'), FONTS.zh.wenkai, zhS, 'zh-CN')}${opt('fontZh', 'song', '思源宋体', t('noteSong'), FONTS.zh.song, zhS, 'zh-CN')}</div>
-    <div class="set-sec"><h3>${esc(t('backup'))}</h3><p>${esc(last ? t('lastBackup', { t: timeAgo(last) }) : t('neverBackup'))} ${esc(t('importNote'))}</p>
-      <div class="set-row"><button class="btn" data-s="export">${esc(t('exportBtn', { n }))}</button><button class="btn" data-s="import">${esc(t('importBtn'))}</button></div></div>
-    <div class="set-sec"><h3>${esc(t('danger'))}</h3><div class="set-row"><button class="btn danger" data-s="wipe" ${n ? '' : 'disabled'}>${esc(t('wipe'))}</button></div></div>`;
+      <button data-ui="ko" lang="ko" aria-pressed="${cfg.uiLang === 'ko'}">한국어</button><button data-ui="zh" lang="zh-CN" aria-pressed="${cfg.uiLang === 'zh'}">中文</button></div></div>
+    <div class="set-sec"><h3>${esc(t('backup'))}</h3><p>${esc(last ? t('lastBackup', { t: timeAgo(last) }) : t('neverBackup'))}${cfg.uiLang === 'zh' ? '' : ' '}${esc(t('importNote'))}</p>
+      <div class="set-row"><button class="btn" data-s="export">${esc(t('exportBtn', { n }))}</button><button class="btn" data-s="import">${esc(t('importBtn'))}</button></div></div>`;
+  wipeUI?.render();
 }
 function openSettings() { renderSettings(); $('#settingsDlg').showModal(); }
 $('#diarySettings').addEventListener('click', e => {
@@ -792,15 +901,13 @@ $('#diarySettings').addEventListener('click', e => {
   const b = e.target.closest('[data-s]'); if (!b) return;
   if (b.dataset.s === 'export') exportAll();
   if (b.dataset.s === 'import') $('#importInput').click();
-  if (b.dataset.s === 'wipe') { $('#settingsDlg').close(); deleteAll(); }
 });
-$('#diarySettings').addEventListener('change', e => { const r = e.target.closest('input[type=radio]'); if (r) setCfg({ [r.name]: r.value }); });
 $('#settingsClose').onclick = () => $('#settingsDlg').close();
 $('#importInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) { $('#settingsDlg').close(); importFile(f); } };
 function setCfg(partial, fromRemote) {
   const langChanged = partial.uiLang && partial.uiLang !== cfg.uiLang;
   Object.assign(cfg, partial); LS.set('diary.settings', cfg);
-  applyFonts(); if (langChanged) applyLang();
+  if (langChanged) applyLang();
   if ($('#settingsDlg').open) { renderSettings(); }
   if (!fromRemote) Core.saveSettings('diary', partial).catch(() => {});
 }
@@ -816,8 +923,9 @@ $('#calGrid').addEventListener('click', e => {
 });
 $('#moodBody').addEventListener('click', e => { const g = e.target.closest('[data-date]'); if (!g) return; state.filter.date = g.dataset.date; renderHome(); if (innerWidth < 900) $('#listSection').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 $('#moodBody').addEventListener('keydown', e => { const g = e.target.closest('[data-date]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
-$('#searchInput').addEventListener('input', e => { state.filter.q = e.target.value; renderList(); renderMemories(); });
+$('#searchInput').addEventListener('input', e => { state.filter.q = e.target.value; state.limit = PAGE; renderList(); renderMemories(); });
 document.addEventListener('click', e => {
+  if (e.target.closest('[data-more]')) { state.limit += PAGE; renderList(); return; }
   const o = e.target.closest('[data-open]'); if (o) { openRead(o.dataset.open); return; }
   const w = e.target.closest('[data-write-date]'); if (w) { openEditor(null, w.dataset.writeDate); return; }
   const c = e.target.closest('[data-clear]');
@@ -845,14 +953,16 @@ addEventListener('beforeunload', e => { if (state.view === 'edit' && isDirty()) 
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.view === 'home') renderHome(); });
 
 /* ===================== 시작 ===================== */
-applyFonts(); applyLang();
+applyLang();
 await Core.init({ app: 'diary', lang: cfg.uiLang, root: '../' });
 Core.mountAppbar({ onSettings: openSettings });
 Core.mountCommonSettings($('#commonBox'));
+wipeUI = Core.mountWipeSection($('#wipeBox'), { label: () => t('wipe', { n: Object.keys(state.entries).length }), count: () => Object.keys(state.entries).length, backup: exportAll, wipe: wipeDiary });
 applyLang();
 Core.watchSettings('diary', d => {
-  const p = {}; for (const k of ['uiLang', 'fontKo', 'fontZh']) if (d[k] && d[k] !== cfg[k]) p[k] = d[k];
-  if (Object.keys(p).length) setCfg(p, true);
+  if (d.uiLang && d.uiLang !== cfg.uiLang) setCfg({ uiLang: d.uiLang }, true);
+  // 글꼴 개편으로 없앤 본문 글꼴 설정을 정리
+  if ('fontKo' in d || 'fontZh' in d) Core.saveSettings('diary', { fontKo: Core.deleteField(), fontZh: Core.deleteField() }).catch(() => {});
 });
 Core.watchCollection('diary', (docs, meta) => {
   const next = {};
@@ -860,6 +970,7 @@ Core.watchCollection('diary', (docs, meta) => {
   state.entries = next;
   if (!meta.fromCache) state.loaded = true; else if (docs.length) state.loaded = true;
   refreshVisible();
+  if (!meta.fromCache && !meta.pending) migrateInline();
 });
 </script>
 </body>
