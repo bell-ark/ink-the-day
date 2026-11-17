@@ -13,9 +13,11 @@ const ICON = {
 };
 export const APPS = [
   { key: 'diary', path: 'diary/', name: { ko: '빛줍기', zh: '拾光集' }, desc: { ko: '일기장', zh: '日记' }, color: '#34437F', on: '#FFFFFF', ready: true },
-  { key: 'meal', path: 'meal/', name: { ko: '식단 기록', zh: '饮食记录' }, desc: { ko: '칼로리와 탄단지', zh: '热量与营养' }, color: '#2E6A58', on: '#FFFFFF', ready: false },
-  { key: 'budget', path: 'budget/', name: { ko: '记账本', zh: '记账本' }, desc: { ko: '가계부', zh: '记账' }, color: '#C2416F', on: '#FFF7F9', ready: false }
+  { key: 'budget', path: 'budget/', name: { ko: '살림결', zh: '烟火簿' }, desc: { ko: '가계부', zh: '记账' }, color: '#C2416F', on: '#FFF7F9', ready: true },
+  { key: 'meal', path: 'meal/', name: { ko: '끼니결', zh: '知味录' }, desc: { ko: '칼로리와 탄단지', zh: '热量与营养' }, color: '#2E6A58', on: '#FFFFFF', ready: false }
 ];
+// 이름에 한자가 있으면 중국어 글꼴 규칙(문장부호 모양)을 적용
+export const nameLang = s => /[\u3400-\u9fff]/.test(s) && !/[\uac00-\ud7af]/.test(s) ? 'zh-CN' : 'ko';
 export const svg = (d, w = 20) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 
 /* ---------- 공통 문구 ---------- */
@@ -37,7 +39,7 @@ const STR = {
     dataTitle: '데이터', wipeDesc: '이 앱의 기록만 지워요. 다른 앱과 테마·잠금 설정은 그대로예요. 누르면 백업 파일을 먼저 내려받아요.',
     wipeBackingUp: '백업 파일 만드는 중…', wipeBackupFail: '백업 파일을 만들지 못해서 지우지 않았어요. 인터넷 연결을 확인하고 다시 시도해 주세요.',
     wipeConfirmBody: '방금 백업 파일을 내려받았어요. 지우면 모든 기기에서 사라지고 되돌릴 수 없어요.', wipeWord: '삭제', wipeTypeHint: '계속하려면 아래 칸에 “{w}”를 입력하세요.',
-    wipeGo: '모두 지우기', wiping: '지우는 중…', wipeDone: '모두 지웠어요.', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.'
+    wipeGo: '모두 지우기', wiping: '지우는 중…', wipeDone: '모두 지웠어요.', wipeEmpty: '지울 기록이 없어요.', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.'
   },
   zh: {
     syncOk: '已同步', syncBusy: '保存中…', syncOffline: '离线，已存到本机', syncErr: '保存失败', syncLoading: '加载中…', syncLocal: '测试模式',
@@ -56,7 +58,7 @@ const STR = {
     dataTitle: '数据', wipeDesc: '只删除这个应用的记录，其他应用以及外观、锁定设置不受影响。点击后会先下载备份文件。',
     wipeBackingUp: '正在生成备份文件…', wipeBackupFail: '未能生成备份文件，所以没有删除。请检查网络连接后再试。',
     wipeConfirmBody: '备份文件已下载。删除后所有设备上的记录都会消失，且无法恢复。', wipeWord: '删除', wipeTypeHint: '如要继续，请在下方输入“{w}”。',
-    wipeGo: '全部删除', wiping: '正在删除…', wipeDone: '已全部删除。', needOnline: '请在联网状态下再试。'
+    wipeGo: '全部删除', wiping: '正在删除…', wipeDone: '已全部删除。', wipeEmpty: '没有可删除的记录。', needOnline: '请在联网状态下再试。'
   }
 };
 const fmt = (s, v = {}) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
@@ -110,6 +112,11 @@ function makeMock() {
     },
     async get(path) { const [col, id] = splitDoc(path); return (data[col] || {})[id] || null; },
     async readAll(path) { return Object.entries(data[path] || {}).map(([id, v]) => ({ id, data: v })); },
+    watchRange(path, field, from, to, cb) {
+      const s = { path, cb: () => cb(Object.entries(data[path] || {}).filter(([, v]) => v[field] >= from && v[field] <= to).map(([id, v]) => ({ id, data: v })), { fromCache: false, pending: false }) };
+      subs.add(s); s.cb(); return () => subs.delete(s);
+    },
+    async readRange(path, field, from, to) { return Object.entries(data[path] || {}).filter(([, v]) => v[field] >= from && v[field] <= to).map(([id, v]) => ({ id, data: v })); },
     async del(path) { const [col, id] = splitDoc(path); if (data[col]) delete data[col][id]; save(); emit(col); },
     async batch(ops) { for (const o of ops) o.del ? await this.del(o.path) : await this.set(o.path, o.val, o.merge); }
   };
@@ -140,13 +147,21 @@ async function makeFirebase() {
     set(path, val, merge) { return F.setDoc(toRef(path), val, merge ? { merge: true } : undefined); },
     del(path) { return F.deleteDoc(toRef(path)); },
     async get(path) { const snap = await F.getDoc(toRef(path)); return snap.exists() ? snap.data() : null; },
-    // 컬렉션 전체를 서버에서 한 번 읽음(백업·전체 삭제용). 오프라인이면 실패로 알림
-    readAll(path, ms = 20000) {
+    // 한 필드의 값이 from~to 사이인 문서만 지켜봄(기간별 읽기)
+    watchRange(path, field, from, to, cb, onErr) {
+      const q = F.query(F.collection(db, path), F.where(field, '>=', from), F.where(field, '<=', to));
+      return F.onSnapshot(q, { includeMetadataChanges: true },
+        snap => cb(snap.docs.map(d => ({ id: d.id, data: d.data() })), { fromCache: snap.metadata.fromCache, pending: snap.metadata.hasPendingWrites }),
+        e => onErr && onErr(e));
+    },
+    readRange(path, field, from, to, ms) { return this.readAll(path, ms, F.query(F.collection(db, path), F.where(field, '>=', from), F.where(field, '<=', to))); },
+    // 컬렉션 전체(또는 q 조건)를 서버에서 한 번 읽음(백업·전체 삭제용). 오프라인이면 실패로 알림
+    readAll(path, ms = 20000, q) {
       return new Promise((res, rej) => {
         let done = false, unsub = null;
         const fin = (fn, v) => { if (done) return; done = true; clearTimeout(timer); if (unsub) unsub(); fn(v); };
         const timer = setTimeout(() => fin(rej, new Error('offline')), ms);
-        unsub = F.onSnapshot(F.collection(db, path), { includeMetadataChanges: true },
+        unsub = F.onSnapshot(q || F.collection(db, path), { includeMetadataChanges: true },
           snap => { if (!snap.metadata.fromCache) fin(res, snap.docs.map(d => ({ id: d.id, data: d.data() }))); },
           e => fin(rej, e));
         if (done) unsub();
@@ -204,6 +219,16 @@ export function watchCollection(name, cb) {
   }, e => { core.lastErr = e; updateSync(); console.error(e); });
   return () => { core.pendingSnaps.delete(key); unsub(); };
 }
+// 기간별 읽기: field 값이 from~to 사이인 문서만(예: 날짜 'YYYY-MM-01'~'YYYY-MM-31')
+export function watchRange(name, field, from, to, cb) {
+  const key = 'rng:' + name;
+  const unsub = core.fb.watchRange(`${base()}/${name}`, field, from, to, (docs, meta) => {
+    core.pendingSnaps.set(key, meta.pending);
+    if (!meta.fromCache) core.loaded = true;
+    updateSync(); cb(docs, meta);
+  }, e => { core.lastErr = e; updateSync(); console.error(e); });
+  return () => { core.pendingSnaps.delete(key); unsub(); };
+}
 export function watchSettings(name, cb) {
   return core.fb.watchDoc(`${base()}/settings/${name}`, (d, meta) => { core.pendingSnaps.set('set:' + name, meta.pending); updateSync(); cb(d || {}, meta); },
     e => { console.error(e); });
@@ -217,6 +242,8 @@ export const saveSettings = (name, partial) => track(core.fb.set(`${base()}/sett
 export const getDoc = (name, id) => core.fb.get(`${base()}/${name}/${id}`);
 // 컬렉션 전체를 서버에서 한 번 읽기: 백업·전체 삭제·보관본 때만 사용
 export const readAll = name => core.fb.readAll(`${base()}/${name}`);
+// 기간 안의 문서를 서버에서 한 번 읽기(가져오기 중복 확인용)
+export const readRange = (name, field, from, to) => core.fb.readRange(`${base()}/${name}`, field, from, to);
 // 여러 컬렉션에 걸친 쓰기·지우기를 한꺼번에: [{ name, id, val } 또는 { name, id, del: true }]
 export const writeBatch = ops => track(core.fb.batch(ops.map(o => ({ path: `${base()}/${o.name}/${o.id}`, val: o.val, del: !!o.del }))));
 export const deleteField = () => core.mode === 'mock' ? DELETE : core.fb.F.deleteField();
@@ -311,7 +338,7 @@ function toggleSwitcher() {
   const nav = document.createElement('nav'); nav.className = 'switcher'; nav.id = 'core-switcher'; nav.setAttribute('aria-label', T('switchApp'));
   nav.innerHTML = APPS.map(a => `<a href="${core.root}${a.path}" class="${a.ready ? '' : 'sw-off'}" ${a.key === core.app ? 'aria-current="page"' : ''} ${a.ready ? '' : 'aria-disabled="true" tabindex="-1"'}>
       <span class="sw-glyph" style="background:${a.color};color:${a.on}">${svg(ICON[a.key], 22)}</span>
-      <span class="sw-text"><span class="sw-name" style="font-family:var(--title)" ${a.key === 'budget' ? 'lang="zh-CN"' : ''}>${esc(a.name[core.lang])}</span><span class="sw-desc">${esc(a.ready ? a.desc[core.lang] : T('soon'))}</span></span>
+      <span class="sw-text"><span class="sw-name" style="font-family:var(--title)" lang="${nameLang(a.name[core.lang])}">${esc(a.name[core.lang])}</span><span class="sw-desc">${esc(a.ready ? a.desc[core.lang] : T('soon'))}</span></span>
     </a>`).join('') + `<span class="sw-sep"></span>
     <a href="${core.root}index.html">${svg(ICON.home)}<span class="sw-text">${esc(T('home'))}</span></a>
     ${core.lock ? `<button type="button" id="core-lock-now">${svg(ICON.lock)}<span class="sw-text">${esc(T('lockNow'))}</span></button>` : ''}`;
@@ -550,7 +577,7 @@ function renderCommon() {
 }
 
 /* ---------- 데이터 구역: 전체 삭제 (세 앱 공통) ----------
-   opts: { label(): 버튼 글자, count(): 지울 기록 수, backup(): 백업 파일 내려받기(성공하면 true), wipe(): 실제 삭제 } */
+   opts: { label(): 버튼 글자, count(): 지울 기록 수, backup(): 백업 파일 내려받기(성공하면 true, 지울 것이 없으면 'empty'), wipe(): 실제 삭제 } */
 export function mountWipeSection(container, opts) {
   const render = () => {
     const n = opts.count();
@@ -570,6 +597,7 @@ async function runWipe(opts) {
   let ok = false;
   try { ok = await opts.backup(); } catch (e) { console.error(e); }
   tt.dismiss();
+  if (ok === 'empty') { toast(T('wipeEmpty')); return; }
   if (!ok) { toast(T('wipeBackupFail'), { kind: 'err', ms: 8000 }); return; }
   const word = T('wipeWord');
   const go = await new Promise(res => {
