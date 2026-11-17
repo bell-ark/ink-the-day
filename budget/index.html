@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-app="budget">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F9EEF1">
+<title>烟火簿</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<link rel="stylesheet" href="../shared/base.css">
+<style>
+/* 이 앱에서만 쓰는 색 */
+:root[data-app="budget"]{--exp:#A8123F;--inc:#1F7A80;--bar:#E59AB3;--bar-soft:rgba(229,154,179,.32);--weekend:rgba(201,72,118,.06);--mark:rgba(247,170,198,.45);--line-soft:#F2DAE2}
+@media (prefers-color-scheme:dark){:root[data-app="budget"]:not([data-theme="light"]){--exp:#FF8FAA;--inc:#7DD3CF;--bar:#A85E7A;--bar-soft:rgba(168,94,122,.34);--weekend:rgba(247,230,236,.05);--mark:rgba(240,120,165,.24);--line-soft:#35232B}}
+:root[data-theme="dark"][data-app="budget"]{--exp:#FF8FAA;--inc:#7DD3CF;--bar:#A85E7A;--bar-soft:rgba(168,94,122,.34);--weekend:rgba(247,230,236,.05);--mark:rgba(240,120,165,.24);--line-soft:#35232B}
+
+.wrap{max-width:1060px;margin:0 auto;padding:12px 16px 120px}
+.link{background:none;border:0;padding:10px 2px;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;font-size:15px}
+.link:hover{text-decoration-thickness:2px}
+
+/* 위: 달 이동 */
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;padding:6px 0 16px}
+.month-nav{display:flex;align-items:center;gap:12px}
+.month-nav h1{margin:0;font-family:var(--title);font-weight:700;font-size:clamp(28px,7vw,40px);line-height:1.2}
+.nav-btns{display:flex;gap:4px}
+.nav-btns .icon-btn{border:1px solid var(--line);color:var(--ink)}
+.top-actions{display:flex;gap:2px 14px;align-items:center;flex-wrap:wrap}
+
+/* 요약 */
+.figures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.figures>div{padding:14px 0 14px 22px;border-left:1px solid var(--line)}
+.figures>div:first-child{padding-left:0;border-left:0}
+.figures dt{font-size:13px;color:var(--muted)}
+.figures dd{margin:2px 0 0;font-size:22px;font-weight:600}
+.figures dd.inc{color:var(--inc)}
+.figures .net dd{font-size:30px}
+.dbl{display:inline-block;border-bottom:4px double var(--ink);line-height:1.25}
+@media (max-width:639px){
+  .figures{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .figures .net{grid-column:1/-1;order:-1;padding-left:0;border-left:0;border-bottom:1px solid var(--line)}
+  .figures>div:nth-child(1){padding-left:0;border-left:0}
+  .figures>div:nth-child(2){padding-left:18px}
+}
+
+/* 예산 */
+.budget{padding:16px 0 6px}
+.budget-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.budget-head strong{font-weight:600}
+.track{position:relative;height:10px;background:var(--line-soft);border-radius:5px;margin:10px 0 8px}
+.track.has-tick{margin-top:26px}
+.fill{position:absolute;left:0;top:0;bottom:0;background:var(--bar);border-radius:5px}
+.fill.over{background:var(--exp)}
+.tick{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--ink)}
+.tick::after{content:attr(data-label);position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--muted);white-space:nowrap}
+.budget-row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:14px}
+.budget-note{margin:6px 0 0;font-size:15px}
+.hint{font-size:13px;color:var(--muted)}
+.budget-edit{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.budget-edit .input{width:180px;text-align:right}
+
+/* 날짜별 지출 */
+.sec{margin-top:30px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px 18px;flex-wrap:wrap;margin-bottom:12px}
+h2{margin:0;font-size:17px;font-weight:600}
+.legend{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw-dash{width:18px;height:0;border-top:2px dashed var(--ink)}
+.sw-over{width:10px;height:10px;background:var(--exp);border-radius:2px}
+.sw-inc{width:8px;height:8px;background:var(--inc);border-radius:50%}
+.sky-frame{position:relative}
+.days{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:2px}
+.day{appearance:none;border:0;background:transparent;padding:0;margin:0;display:flex;flex-direction:column;border-radius:4px;color:inherit}
+.zone{position:relative;height:150px;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid var(--ink)}
+.day.wk .zone{background:var(--weekend)}
+.bar{width:76%;background:var(--bar);border-radius:2px 2px 0 0}
+.bar.over{background:var(--exp)}
+.incdot{position:absolute;top:3px;left:50%;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--inc)}
+.dnum{height:28px;display:grid;place-items:center;font-size:12px;color:var(--muted)}
+.dnum:not(.k){visibility:hidden}
+.day.today .dnum span{background:var(--ink);color:var(--bg);border-radius:10px;padding:0 6px;font-weight:600}
+.day[aria-pressed="true"]{background:var(--mark)}
+.day[aria-pressed="true"] .dnum{color:var(--ink);font-weight:600}
+.guide-layer{position:absolute;left:0;right:0;top:0;height:150px;pointer-events:none}
+.guide{position:absolute;left:0;right:0;border-top:2px dashed var(--ink);opacity:.85}
+.sky-empty{position:absolute;left:0;right:0;top:0;height:150px;display:grid;place-items:center;color:var(--muted);pointer-events:none;margin:0;text-align:center;padding:0 12px}
+@media (min-width:760px){.dnum:not(.k){visibility:visible}.days{gap:3px}}
+
+/* 본문 두 단 */
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:34px;margin-top:32px}
+@media (min-width:900px){
+  .cols{grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:52px;align-items:start}
+  .side-col{position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px)}
+}
+.entry-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:16px}
+.entry-form h2{margin-bottom:12px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fields .field{min-width:0}
+.field.amount,.field.memo{grid-column:1/-1}
+@media (min-width:600px){
+  .fields{grid-template-columns:128px 160px minmax(0,1fr) minmax(0,1fr)}
+  .field.amount,.field.memo{grid-column:span 2}
+}
+select.input{appearance:auto;padding:0 10px}
+input[type="date"].input{padding:0 10px}
+.tseg{display:flex;height:44px;border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden;background:var(--surface)}
+.tseg label{flex:1;position:relative;display:block}
+.tseg input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.tseg span{display:grid;place-items:center;height:100%;font-weight:500}
+.tseg input:checked+span{background:var(--accent);color:var(--on-accent);font-weight:600}
+.tseg input:focus-visible+span{outline:2px solid var(--accent-text);outline-offset:-3px}
+.amount-wrap{position:relative}
+.amount-wrap .input{padding-left:30px;text-align:right}
+.amount-wrap::after{content:"₩";position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.msg{font-size:14px;min-height:1.6em}
+.msg.err{color:var(--exp)}
+
+.list-head{display:flex;align-items:baseline;gap:10px;margin-top:30px}
+.count{font-size:13px;color:var(--muted)}
+.filterbar{margin:8px 0 0;font-size:14px;padding:8px 12px;background:var(--mark);border-radius:var(--r-sm)}
+.filterbar .link{padding:0 2px;font-size:14px}
+.dgroup{margin-top:18px}
+.dh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0;padding:6px 0;border-bottom:1px solid var(--ink);font-size:14px;font-weight:600}
+.dh .tot{display:flex;gap:14px;font-weight:500;color:var(--muted)}
+.dh .tot .inc{color:var(--inc)}
+.entries{list-style:none;margin:0;padding:0}
+.entry{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:0 6px;border-bottom:1px solid var(--line-soft)}
+.entry.is-editing{background:var(--mark)}
+.entry-main{text-align:left;background:none;border:0;padding:10px 4px;min-width:0;min-height:44px;color:inherit}
+.e-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e-title b{font-weight:600;margin-right:8px}
+.e-sub{display:block;font-size:13px;color:var(--muted)}
+.e-amt{min-width:96px;text-align:right;font-weight:500;white-space:nowrap}
+.e-amt.inc{color:var(--inc)}
+.e-del{background:none;border:0;padding:10px 6px;min-height:44px;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.e-del.confirm{color:var(--exp);font-weight:600}
+.empty{color:var(--muted);padding:18px 0;margin:0}
+
+/* 분류별 지출 */
+.cats{list-style:none;margin:10px 0 0;padding:0}
+.cat-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 12px;align-items:baseline;width:100%;min-height:44px;padding:10px 8px;border:0;border-bottom:1px solid var(--line-soft);background:transparent;text-align:left;color:inherit}
+.cbar{position:absolute;left:0;top:0;bottom:0;background:var(--bar-soft);z-index:0}
+.cat-row>span:not(.cbar){position:relative;z-index:1}
+.cat-row .cpct{min-width:3.2em;text-align:right;color:var(--muted);font-size:13px}
+.cat-row[aria-pressed="true"]{background:var(--mark)}
+.cat-row[aria-pressed="true"] .cname{font-weight:600}
+</style>
+</head>
+<body>
+<header id="appbar"></header>
+<main class="wrap">
+  <header class="top">
+    <div class="month-nav">
+      <h1 id="monthTitle" class="num"></h1>
+      <div class="nav-btns">
+        <button type="button" class="icon-btn" data-act="prev" id="prevBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button type="button" class="icon-btn" data-act="next" id="nextBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="link" data-act="today" id="todayBtn" data-i="thisMonth" hidden></button>
+      <button type="button" class="link" data-act="import" data-i="importCsv"></button>
+      <button type="button" class="link" data-act="export" data-i="exportCsv"></button>
+    </div>
+  </header>
+
+  <section id="summary"></section>
+  <section class="sec" id="sky"></section>
+
+  <div class="cols">
+    <section class="main-col">
+      <form id="entryForm" class="entry-form" novalidate autocomplete="off">
+        <h2 id="formTitle"></h2>
+        <div class="fields">
+          <div class="field">
+            <span class="field-label" id="typeLab" data-i="type"></span>
+            <div class="tseg" role="radiogroup" aria-labelledby="typeLab">
+              <label><input type="radio" name="t" value="e" checked><span data-i="exp"></span></label>
+              <label><input type="radio" name="t" value="i"><span data-i="inc"></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fDate" data-i="date"></label>
+            <input class="input" id="fDate" type="date">
+          </div>
+          <div class="field amount">
+            <label class="field-label" for="fAmount" data-i="amount"></label>
+            <div class="amount-wrap"><input class="input num" id="fAmount" type="text" inputmode="numeric" placeholder="0" data-money></div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fCat" data-i="cat"></label>
+            <select class="input" id="fCat"></select>
+          </div>
+          <div class="field" id="payField">
+            <label class="field-label" for="fPay" data-i="pay"></label>
+            <select class="input" id="fPay"></select>
+          </div>
+          <div class="field memo">
+            <label class="field-label" for="fMemo" data-i="memo"></label>
+            <input class="input" id="fMemo" type="text" maxlength="60">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn primary" id="fSubmit"></button>
+          <button type="button" class="link" id="fCancel" data-i="cancel" hidden></button>
+          <span class="msg" id="msg" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <div class="list-head"><h2 data-i="details"></h2><span class="count num" id="count"></span></div>
+      <div id="filters"></div>
+      <div id="list"></div>
+    </section>
+    <aside class="side-col" id="breakdown"></aside>
+  </div>
+</main>
+
+<dialog id="settingsDlg"><div class="dlg"><h2 data-i="settings"></h2><div id="appSettings"></div><div id="commonBox"></div><div id="wipeBox"></div><div class="dlg-actions"><button class="btn primary" id="settingsClose" data-i="close"></button></div></div></dialog>
+<input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+<input type="file" id="legacyFile" accept=".html,.htm,text/html" hidden>
+
+<script type="module">
+import * as Core from '../shared/core.js';
+const { esc, toast, LS } = Core;
+
+/* ===================== 고정 항목(코드로 저장, 화면에서만 언어별 이름) ===================== */
+const CATS = {
+  e: ['food', 'cafe', 'transport', 'housing', 'daily', 'health', 'culture', 'shopping', 'edu', 'gift', 'other'],
+  i: ['salary', 'side', 'allowance', 'otherinc']
+};
+const PAYS = ['card', 'cash', 'transfer'];
+const NAMES = {
+  ko: {
+    food: '식비', cafe: '카페·간식', transport: '교통', housing: '주거·통신', daily: '생활용품', health: '의료·건강', culture: '문화·여가', shopping: '쇼핑·의류', edu: '교육', gift: '경조사·선물', other: '기타',
+    salary: '월급', side: '부업 수입', allowance: '용돈', otherinc: '기타 수입',
+    card: '카드', cash: '현금', transfer: '계좌이체'
+  },
+  zh: {
+    food: '餐饮', cafe: '咖啡·零食', transport: '交通', housing: '住房·通讯', daily: '生活用品', health: '医疗·健康', culture: '文化·休闲', shopping: '购物·服饰', edu: '教育', gift: '人情·礼物', other: '其他',
+    salary: '工资', side: '副业收入', allowance: '零花钱', otherinc: '其他收入',
+    card: '银行卡', cash: '现金', transfer: '转账'
+  }
+};
+
+/* ===================== 문구 ===================== */
+const D = {
+  ko: {
+    wd: ['일', '월', '화', '수', '목', '금', '토'],
+    ym: (y, m) => `${y}년 ${m}월`, md: (m, d) => `${m}월 ${d}일`, dayHead: (m, d, w) => `${m}월 ${d}일 ${w}요일`,
+    dayAria: (m, d, w, sp, inn) => `${m}월 ${d}일 ${w}요일, 지출 ${sp}${inn ? `, 수입 ${inn}` : ''}`,
+    prevMonth: '이전 달', nextMonth: '다음 달', thisMonth: '이번 달로', importCsv: 'CSV 가져오기', exportCsv: 'CSV 내보내기',
+    summaryAria: '이달 요약', income: '수입', expense: '지출', net: '잔액',
+    monthBudget: '월 예산', save: '저장', cancel: '취소', budgetPh: '예: 2,000,000', budgetFrom: '새 예산은 {m}월부터 적용되고, 이전 달 기록에는 영향이 없어요.',
+    setBudget: '월 예산 정하기', setBudgetHint: '예산을 정하면 하루에 얼마까지 쓸 수 있는지 알려 드려요.', editBudget: '예산 바꾸기',
+    overBy: '예산을 {x} 넘었어요.', lastDay: '오늘이 이달 마지막 날이에요. 오늘은 {x}까지 쓸 수 있어요.', perDay: '오늘을 포함해 {n}일 남았어요. 하루에 {x}까지 쓸 수 있어요.', underBy: '예산보다 {x} 덜 썼어요.',
+    today: '오늘', budgetAria: '예산의 {p}%를 썼어요', tickAria: ', 세로선은 오늘', spent: '지출 {x} ({p}%)', over: '초과 {x}', remain: '남은 예산 {x}',
+    dailyTitle: '날짜별 지출', dayBudget: '하루 예산 {x}', overDays: '예산을 넘은 날', incDays: '수입이 있는 날', noRecMonth: '{m}월에는 아직 기록이 없어요.', daysAria: '날짜를 누르면 그날 내역만 보여요',
+    newEntry: '기록하기', editEntry: '내역 고치기', type: '구분', exp: '지출', inc: '수입', date: '날짜', amount: '금액', cat: '분류', pay: '결제 수단', memo: '메모', memoPh: '예: 점심 칼국수',
+    saveEdit: '고친 내용 저장', notLoaded: '내역을 아직 불러오는 중이에요. 잠시 후 저장해 주세요.', needAmount: '금액을 입력해 주세요.', needDateIn: '{m}월 안의 날짜를 골라 주세요.', saved: '저장했어요.', editSaved: '고친 내용을 저장했어요.', deleted: '삭제했어요.',
+    details: '내역', count: '{n}건', loading: '불러오는 중…', emptyMonth: '{m}월에는 아직 내역이 없어요. 위에서 금액과 분류를 입력하고 저장하면 여기에 보여요.', noMatch: '조건에 맞는 내역이 없어요.', showAll: '전체 보기',
+    filtering: '‘{w}’ 내역만 보는 중이에요.', join: ', ', editHint: '눌러서 고치기', del: '삭제', confirmDel: '정말 삭제', catTitle: '분류별 지출', catEmpty: '지출이 생기면 분류별 비율이 여기에 보여요.', lt1: '1% 미만',
+    csvHead: ['날짜', '구분', '분류', '메모', '결제수단', '금액'], nothingExport: '내보낼 내역이 없어요.', exported: 'CSV 파일을 내려받았어요.',
+    csvBig: '파일이 5MB를 넘어요. 살림결에서 내보낸 CSV인지 확인해 주세요.', csvUnread: '이 파일을 읽을 수 없어요.', csvNone: '가져올 내역을 찾지 못했어요. 날짜와 금액 열이 있어야 해요.', csvBad: ' ({n}줄은 알아볼 수 없었어요)', csvEmpty: '파일에 내역이 없어요.',
+    readExistFail: '기존 내역을 확인하지 못해서 아무것도 가져오지 않았어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', allDup: '모두 이미 있는 내역이라 가져오지 않았어요.', importing: '가져오는 중…',
+    imported: (a, months, dup, bad) => `${a}건을 가져왔어요${months > 1 ? ` (${months}개월)` : ''}.${dup ? ` 겹치는 ${dup}건은 건너뛰었어요.` : ''}${bad ? ` ${bad}줄은 알아볼 수 없었어요.` : ''}`,
+    settings: '설정', close: '닫기', uiLang: '화면 언어',
+    backup: '백업', backupDesc: '모든 달의 내역을 CSV 파일 하나로 내려받아요. 나중에 ‘CSV 가져오기’로 다시 넣을 수 있어요.', backupBtn: '전체 내역 CSV 내려받기', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.',
+    legacy: '이전 记账本에서 옮기기', legacyDesc: '예전에 쓰던 记账本 HTML 파일(保存为 HTML로 만든 파일)을 고르면 그 안의 내역과 예산을 옮겨 와요. 여러 번 골라도 같은 내역이 두 번 들어가지 않아요.', legacyBtn: 'HTML 파일 고르기',
+    legacyBad: '记账本 데이터가 들어 있는 HTML 파일이 아니에요.', legacyNone: '옮길 새 내역이 없어요. 이미 모두 옮겨져 있어요.', legacyDone: '내역 {n}건{b}을 옮겼어요.', legacyBudgets: ', 예산 {n}개',
+    wipe: '모든 내역과 예산 지우기'
+  },
+  zh: {
+    wd: ['日', '一', '二', '三', '四', '五', '六'],
+    ym: (y, m) => `${y}年${m}月`, md: (m, d) => `${m}月${d}日`, dayHead: (m, d, w) => `${m}月${d}日 周${w}`,
+    dayAria: (m, d, w, sp, inn) => `${m}月${d}日 周${w}，支出 ${sp}${inn ? `，收入 ${inn}` : ''}`,
+    prevMonth: '上个月', nextMonth: '下个月', thisMonth: '回到本月', importCsv: '导入 CSV', exportCsv: '导出 CSV',
+    summaryAria: '本月概览', income: '收入', expense: '支出', net: '结余',
+    monthBudget: '月预算', save: '保存', cancel: '取消', budgetPh: '例：2,000,000', budgetFrom: '新预算从{m}月起生效，之前月份的记录不受影响。',
+    setBudget: '设置月预算', setBudgetHint: '设置预算后，这里会告诉你每天还能花多少。', editBudget: '修改预算',
+    overBy: '已超出预算 {x}。', lastDay: '今天是本月最后一天，今天最多还能花 {x}。', perDay: '含今天还剩 {n} 天，每天最多可花 {x}。', underBy: '比预算少花了 {x}。',
+    today: '今天', budgetAria: '已使用预算的 {p}%', tickAria: '，竖线表示今天', spent: '支出 {x}（{p}%）', over: '超出 {x}', remain: '剩余预算 {x}',
+    dailyTitle: '每日支出', dayBudget: '每日预算 {x}', overDays: '超出预算的日子', incDays: '有收入的日子', noRecMonth: '{m}月还没有记录。', daysAria: '点击日期，只看当天明细',
+    newEntry: '记一笔', editEntry: '修改明细', type: '类型', exp: '支出', inc: '收入', date: '日期', amount: '金额', cat: '分类', pay: '支付方式', memo: '备注', memoPh: '例：午饭 牛肉面',
+    saveEdit: '保存修改', notLoaded: '明细尚未加载完成，请稍后再保存。', needAmount: '请输入金额。', needDateIn: '请选择{m}月内的日期。', saved: '已保存。', editSaved: '修改已保存。', deleted: '已删除。',
+    details: '明细', count: '{n} 笔', loading: '正在加载…', emptyMonth: '{m}月还没有明细。在上方填写金额和分类后保存，记录就会显示在这里。', noMatch: '没有符合条件的明细。', showAll: '查看全部',
+    filtering: '正在只看「{w}」的明细。', join: '、', editHint: '点击修改', del: '删除', confirmDel: '确认删除', catTitle: '分类支出', catEmpty: '有支出后，这里会显示各分类的占比。', lt1: '不足 1%',
+    csvHead: ['日期', '类型', '分类', '备注', '支付方式', '金额'], nothingExport: '没有可导出的明细。', exported: '已导出 CSV。',
+    csvBig: '文件超过 5 MB，请确认选的是烟火簿导出的 CSV。', csvUnread: '无法读取这个文件。', csvNone: '没有找到可导入的明细。文件需要包含日期和金额两列。', csvBad: '（{n} 行无法识别）', csvEmpty: '文件里没有明细。',
+    readExistFail: '未能核对已有明细，没有导入任何内容。请检查网络连接后再试。', allDup: '这些明细都已经在烟火簿里了，没有重复导入。', importing: '正在导入…',
+    imported: (a, months, dup, bad) => `已导入 ${a} 笔${months > 1 ? `，涉及 ${months} 个月` : ''}${dup ? `，跳过 ${dup} 笔重复` : ''}${bad ? `，${bad} 行无法识别` : ''}。`,
+    settings: '设置', close: '关闭', uiLang: '界面语言',
+    backup: '备份', backupDesc: '把所有月份的明细下载为一个 CSV 文件，之后可用“导入 CSV”恢复。', backupBtn: '下载全部明细（CSV）', needOnline: '请在联网状态下再试。',
+    legacy: '从旧版记账本迁移', legacyDesc: '选择以前用“保存为 HTML”保存的记账本文件，就能把其中的明细和预算迁移过来。重复选择同一个文件也不会重复导入。', legacyBtn: '选择 HTML 文件',
+    legacyBad: '这个 HTML 文件里没有记账本数据。', legacyNone: '没有需要迁移的新明细，已经全部迁移过了。', legacyDone: '已迁移 {n} 笔明细{b}。', legacyBudgets: '，{n} 条预算',
+    wipe: '删除所有明细和预算'
+  }
+};
+// 원본·CSV에 있던 글자 → 코드(두 언어 이름과 코드 모두 알아봄)
+const CODE_OF = {};
+for (const lang of ['ko', 'zh']) for (const [code, name] of Object.entries(NAMES[lang])) { CODE_OF[name] = code; CODE_OF[code] = code; }
+Object.assign(CODE_OF, { '银行卡': 'card', '체크카드': 'card', '신용카드': 'card', '이체': 'transfer' });
+const catCode = (text, t) => {
+  const s = String(text || '').trim();
+  if (!s) return t === 'i' ? 'otherinc' : 'other';
+  if (t === 'i' && ['其他', '기타', 'other'].includes(s)) return 'otherinc';
+  if (t === 'e' && ['其他收入', '기타 수입', 'otherinc'].includes(s)) return 'other';
+  return CODE_OF[s] || s.slice(0, 20);      // 모르는 분류는 글자 그대로(직접 만든 분류)
+};
+const payCode = text => { const s = String(text || '').trim(); return s ? (CODE_OF[s] || s.slice(0, 20)) : ''; };
+
+/* ===================== 상태 ===================== */
+const COL = 'ledger';
+const cfg = { uiLang: LS.get('budget.settings', {}).uiLang === 'ko' ? 'ko' : 'zh' };   // 기본은 중국어
+let L = D[cfg.uiLang];
+const t = (k, v = {}) => String(L[k] ?? k).replace(/\{(\w+)\}/g, (_, x) => v[x] ?? '');
+const label = code => NAMES[cfg.uiLang][code] || code;
+
+const state = {
+  ym: '', entries: {}, loaded: false, filter: { day: null, cat: null },
+  editing: null, confirmDel: null, type: 'e', date: '', cat: 'food', pay: 'card', budgetEditing: false
+};
+let budgets = null, unsubMonth = null, wipeUI = null;
+
+/* ===================== 도우미 ===================== */
+const $ = s => document.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const pad = n => String(n).padStart(2, '0');
+const nf = new Intl.NumberFormat('ko-KR');
+const won = n => '₩' + nf.format(Math.round(n));
+const signed = (n, ty) => (ty === 'i' ? '+' : '−') + '₩' + nf.format(n);
+const newId = () => 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const todayYmd = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const curYm = () => todayYmd().slice(0, 7);
+const parts = ym => ym.split('-').map(Number);
+const dim = ym => { const [y, m] = parts(ym); return new Date(y, m, 0).getDate(); };
+const shift = (ym, k) => { const [y, m] = parts(ym); const d = new Date(y, m - 1 + k, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const dow = (ym, day) => { const [y, m] = parts(ym); return new Date(y, m - 1, day).getDay(); };
+const defaultDate = ym => ym === curYm() ? todayYmd() : ym + '-01';
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Firestore 문서 → 화면용 기록(잘못된 문서는 버림)
+function fromDoc(id, v) {
+  if (!v || !DATE_RE.test(v.d) || (v.t !== 'e' && v.t !== 'i') || !(Number(v.a) > 0)) return null;
+  return { id, d: v.d, t: v.t, c: String(v.c || (v.t === 'i' ? 'otherinc' : 'other')), a: Math.round(Number(v.a)), m: String(v.m || ''), p: v.t === 'e' ? String(v.p || '') : '', createdAt: Number(v.createdAt) || 0 };
+}
+const toDoc = e => ({ d: e.d, t: e.t, c: e.c, a: e.a, m: e.m, p: e.t === 'e' ? e.p : '', createdAt: e.createdAt || Date.now(), updatedAt: Date.now() });
+const entryKey = e => [e.d, e.t, e.c, e.a, e.m, e.p].join('\u0001');
+
+function budgetFor(ym) {
+  if (!budgets) return 0;
+  const keys = Object.keys(budgets).filter(k => /^\d{4}-\d{2}$/.test(k) && k <= ym).sort();
+  return keys.length ? Number(budgets[keys[keys.length - 1]]) || 0 : 0;
+}
+function download(text, filename, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* ===================== 계산 ===================== */
+function compute() {
+  const ym = state.ym, [y, m] = parts(ym), n = dim(ym);
+  const list = Object.values(state.entries).sort((a, b) => a.d.localeCompare(b.d) || a.createdAt - b.createdAt);
+  const daily = new Array(n + 1).fill(0), inc = new Array(n + 1).fill(0), cats = {};
+  let tin = 0, tout = 0;
+  for (const e of list) {
+    const d = +e.d.slice(8, 10);
+    if (e.t === 'e') { daily[d] += e.a; tout += e.a; cats[e.c] = (cats[e.c] || 0) + e.a; }
+    else { inc[d] += e.a; tin += e.a; }
+  }
+  return { ym, y, m, n, list, daily, inc, cats, tin, tout, budget: budgetFor(ym) };
+}
+
+/* ===================== 그리기 ===================== */
+function renderSummary(v) {
+  const net = v.tin - v.tout;
+  let html = `<dl class="figures num">
+    <div><dt>${esc(t('income'))}</dt><dd class="inc">${won(v.tin)}</dd></div>
+    <div><dt>${esc(t('expense'))}</dt><dd>${won(v.tout)}</dd></div>
+    <div class="net"><dt>${esc(t('net'))}</dt><dd><span class="dbl">${net < 0 ? '−' : ''}${won(Math.abs(net))}</span></dd></div>
+  </dl>`;
+  if (budgets === null) return html;
+  if (state.budgetEditing) {
+    const cur = v.budget ? nf.format(v.budget) : '';
+    return html + `<div class="budget"><div class="budget-edit">
+      <label for="budgetInput">${esc(t('monthBudget'))}</label>
+      <input id="budgetInput" class="input num" type="text" inputmode="numeric" data-money placeholder="${esc(t('budgetPh'))}" value="${cur}">
+      <button type="button" class="btn primary" data-act="budget-save">${esc(t('save'))}</button>
+      <button type="button" class="link" data-act="budget-cancel">${esc(t('cancel'))}</button>
+    </div><p class="hint" style="margin:6px 0 0">${esc(t('budgetFrom', { m: v.m }))}</p></div>`;
+  }
+  if (!(v.budget > 0)) {
+    return html + `<div class="budget"><button type="button" class="link" data-act="budget-edit">${esc(t('setBudget'))}</button>
+      <span class="hint">${esc(t('setBudgetHint'))}</span></div>`;
+  }
+  const b = v.budget, spent = v.tout, over = spent > b, pct = Math.round(spent / b * 100);
+  const isCur = state.ym === curYm(), isPast = state.ym < curYm();
+  const td = +todayYmd().slice(8, 10);
+  let sentence = '';
+  if (over) sentence = t('overBy', { x: won(spent - b) });
+  else if (isCur) {
+    const left = v.n - td + 1, remain = b - spent;
+    sentence = left === 1 ? t('lastDay', { x: won(remain) }) : t('perDay', { n: left, x: won(Math.floor(remain / left)) });
+  } else if (isPast) sentence = t('underBy', { x: won(b - spent) });
+  const tick = isCur ? `<span class="tick" data-label="${esc(t('today'))}" style="left:${(td / v.n * 100).toFixed(1)}%"></span>` : '';
+  return html + `<div class="budget">
+    <div class="budget-head"><span>${esc(t('monthBudget'))} <strong class="num">${won(b)}</strong></span><button type="button" class="link" data-act="budget-edit">${esc(t('editBudget'))}</button></div>
+    <div class="track${isCur ? ' has-tick' : ''}" role="img" aria-label="${esc(t('budgetAria', { p: pct }) + (isCur ? t('tickAria') : ''))}"><span class="fill${over ? ' over' : ''}" style="width:${(Math.min(spent / b, 1) * 100).toFixed(1)}%"></span>${tick}</div>
+    <div class="budget-row num"><span>${esc(t('spent', { x: won(spent), p: pct }))}</span><span>${esc(over ? t('over', { x: won(spent - b) }) : t('remain', { x: won(b - spent) }))}</span></div>
+    ${sentence ? `<p class="budget-note">${esc(sentence)}</p>` : ''}
+  </div>`;
+}
+
+function renderSky(v) {
+  const n = v.n, maxDaily = Math.max(0, ...v.daily.slice(1));
+  const dayBudget = v.budget > 0 ? v.budget / n : 0;
+  const maxV = Math.max(maxDaily, dayBudget * 1.15, 1);
+  const tdy = todayYmd(), isCur = state.ym === tdy.slice(0, 7), td = +tdy.slice(8);
+  const tabDay = state.filter.day || (isCur ? td : 1);
+  let days = '';
+  for (let d = 1; d <= n; d++) {
+    const sp = v.daily[d], inn = v.inc[d], w = dow(state.ym, d);
+    const over = dayBudget > 0 && sp > dayBudget;
+    const k = d === 1 || d % 5 === 0;
+    const lab = L.dayAria(v.m, d, L.wd[w], won(sp), inn ? won(inn) : '');
+    days += `<button type="button" class="day${w === 0 || w === 6 ? ' wk' : ''}${isCur && d === td ? ' today' : ''}" data-act="day" data-day="${d}" aria-pressed="${state.filter.day === d}" aria-label="${esc(lab)}" title="${esc(lab)}" tabindex="${d === tabDay ? 0 : -1}">
+      <span class="zone">${inn ? '<i class="incdot"></i>' : ''}<span class="bar${over ? ' over' : ''}" style="height:${(sp / maxV * 100).toFixed(2)}%"></span></span>
+      <span class="dnum num${k || (isCur && d === td) ? ' k' : ''}"><span>${d}</span></span></button>`;
+  }
+  const legend = [];
+  if (dayBudget > 0) {
+    legend.push(`<span><i class="sw-dash"></i>${esc(t('dayBudget', { x: won(dayBudget) }))}</span>`);
+    legend.push(`<span><i class="sw-over"></i>${esc(t('overDays'))}</span>`);
+  }
+  legend.push(`<span><i class="sw-inc"></i>${esc(t('incDays'))}</span>`);
+  const empty = state.loaded && v.tout === 0 && v.tin === 0 ? `<p class="sky-empty">${esc(t('noRecMonth', { m: v.m }))}</p>` : '';
+  return `<div class="sec-head"><h2>${esc(t('dailyTitle'))}</h2><div class="legend">${legend.join('')}</div></div>
+    <div class="sky-frame" style="--n:${n}"><div class="days" role="group" aria-label="${esc(t('daysAria'))}">${days}</div>
+    ${dayBudget > 0 ? `<div class="guide-layer"><i class="guide" style="bottom:${(dayBudget / maxV * 100).toFixed(2)}%"></i></div>` : ''}${empty}</div>`;
+}
+
+function renderBreakdown(v) {
+  const rows = Object.entries(v.cats).sort((a, b) => b[1] - a[1]);
+  if (!rows.length) return `<h2>${esc(t('catTitle'))}</h2><p class="empty">${esc(t('catEmpty'))}</p>`;
+  return `<h2>${esc(t('catTitle'))}</h2><ul class="cats">` + rows.map(([c, a]) => {
+    const p = a / v.tout * 100;
+    return `<li><button type="button" class="cat-row" data-act="cat" data-cat="${esc(c)}" aria-pressed="${state.filter.cat === c}">
+      <span class="cbar" style="width:${p.toFixed(1)}%"></span><span class="cname">${esc(label(c))}</span><span class="camt num">${won(a)}</span><span class="cpct num">${p < 1 ? esc(t('lt1')) : Math.round(p) + '%'}</span></button></li>`;
+  }).join('') + `</ul>`;
+}
+
+function renderFilters(v) {
+  const { day, cat } = state.filter;
+  if (!day && !cat) return '';
+  const what = [day ? L.md(v.m, day) : '', cat ? label(cat) : ''].filter(Boolean).join(t('join'));
+  return `<p class="filterbar">${esc(t('filtering', { w: what }))} <button type="button" class="link" data-act="clear">${esc(t('showAll'))}</button></p>`;
+}
+
+function renderList(v) {
+  const countEl = $('#count');
+  if (!state.loaded) { countEl.textContent = ''; return `<p class="empty">${esc(t('loading'))}</p>`; }
+  let list = v.list.slice();
+  const { day, cat } = state.filter;
+  if (day) list = list.filter(e => +e.d.slice(8, 10) === day);
+  if (cat) list = list.filter(e => e.t === 'e' && e.c === cat);
+  countEl.textContent = v.list.length ? t('count', { n: list.length }) : '';
+  if (!v.list.length) return `<p class="empty">${esc(t('emptyMonth', { m: v.m }))}</p>`;
+  if (!list.length) return `<p class="empty">${esc(t('noMatch'))} <button type="button" class="link" data-act="clear">${esc(t('showAll'))}</button></p>`;
+  const groups = {};
+  for (const e of list) (groups[e.d] = groups[e.d] || []).push(e);
+  return Object.keys(groups).sort().reverse().map(d => {
+    const g = groups[d].slice().reverse();
+    const di = g.filter(e => e.t === 'i').reduce((s, e) => s + e.a, 0);
+    const de = g.filter(e => e.t === 'e').reduce((s, e) => s + e.a, 0);
+    const dd = +d.slice(8, 10), w = dow(state.ym, dd);
+    return `<section class="dgroup"><h3 class="dh"><span>${esc(L.dayHead(v.m, dd, L.wd[w]))}</span>
+      <span class="tot num">${di ? `<span class="inc">+${nf.format(di)}</span>` : ''}${de ? `<span>−${nf.format(de)}</span>` : ''}</span></h3>
+      <ul class="entries">${g.map(e => {
+        const sub = e.t === 'e' && e.p ? label(e.p) : '';
+        return `<li class="entry${state.editing === e.id ? ' is-editing' : ''}">
+          <button type="button" class="entry-main" data-act="edit" data-id="${esc(e.id)}" title="${esc(t('editHint'))}" aria-label="${esc(`${label(e.c)} ${e.m} ${signed(e.a, e.t)}, ${t('editHint')}`)}">
+            <span class="e-title"><b>${esc(label(e.c))}</b>${esc(e.m)}</span>${sub ? `<span class="e-sub">${esc(sub)}</span>` : ''}</button>
+          <span class="e-amt num${e.t === 'i' ? ' inc' : ''}">${signed(e.a, e.t)}</span>
+          <button type="button" class="e-del${state.confirmDel === e.id ? ' confirm' : ''}" data-act="del" data-id="${esc(e.id)}">${esc(state.confirmDel === e.id ? t('confirmDel') : t('del'))}</button>
+        </li>`;
+      }).join('')}</ul></section>`;
+  }).join('');
+}
+
+function render() {
+  const v = compute();
+  $('#monthTitle').textContent = L.ym(v.y, v.m);
+  $('#todayBtn').hidden = state.ym === curYm();
+  $('#summary').innerHTML = renderSummary(v);
+  $('#summary').setAttribute('aria-label', t('summaryAria'));
+  $('#sky').innerHTML = renderSky(v);
+  $('#breakdown').innerHTML = renderBreakdown(v);
+  renderListArea(v);
+  syncSubmit();
+}
+function renderListArea(v) {
+  v = v || compute();
+  $('#filters').innerHTML = renderFilters(v);
+  $('#list').innerHTML = renderList(v);
+}
+function applyFilterUI() {
+  $$('.day').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.day === state.filter.day)));
+  $$('.cat-row').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === state.filter.cat)));
+  renderListArea();
+}
+
+/* ===================== 입력 칸 ===================== */
+const f = {
+  form: $('#entryForm'), title: $('#formTitle'), radios: $$('input[name="t"]'),
+  date: $('#fDate'), amount: $('#fAmount'), cat: $('#fCat'), pay: $('#fPay'), payField: $('#payField'),
+  memo: $('#fMemo'), submit: $('#fSubmit'), cancel: $('#fCancel'), msg: $('#msg')
+};
+function syncSubmit() { f.submit.disabled = !state.loaded; }
+function syncForm() {
+  f.radios.forEach(r => { r.checked = r.value === state.type; });
+  const base = CATS[state.type];
+  const opts = base.includes(state.cat) ? base : [state.cat, ...base];
+  f.cat.innerHTML = opts.map(c => `<option value="${esc(c)}">${esc(label(c))}</option>`).join('');
+  f.cat.value = state.cat;
+  const pays = PAYS.includes(state.pay) || !state.pay ? PAYS : [state.pay, ...PAYS];
+  f.pay.innerHTML = pays.map(p => `<option value="${esc(p)}">${esc(label(p))}</option>`).join('');
+  f.pay.value = state.pay || PAYS[0];
+  f.payField.hidden = state.type !== 'e';
+  f.date.min = `${state.ym}-01`;
+  f.date.max = `${state.ym}-${pad(dim(state.ym))}`;
+  f.date.value = state.date;
+  f.title.textContent = t(state.editing ? 'editEntry' : 'newEntry');
+  f.submit.textContent = t(state.editing ? 'saveEdit' : 'save');
+  f.cancel.hidden = !state.editing;
+  syncSubmit();
+}
+let flashT;
+function flash(text, isErr, focusEl) {
+  f.msg.textContent = text;
+  f.msg.className = 'msg' + (isErr ? ' err' : '');
+  clearTimeout(flashT);
+  if (!isErr && text) flashT = setTimeout(() => { f.msg.textContent = ''; }, 3000);
+  if (focusEl) focusEl.focus();
+}
+function resetEntryInputs() { f.amount.value = ''; f.memo.value = ''; }
+
+function submitEntry() {
+  const ym = state.ym;
+  const amount = Number(String(f.amount.value).replace(/\D/g, ''));
+  const date = f.date.value;
+  if (!state.loaded) return flash(t('notLoaded'), true);
+  if (!amount) return flash(t('needAmount'), true, f.amount);
+  if (!date || !date.startsWith(ym)) return flash(t('needDateIn', { m: parts(ym)[1] }), true, f.date);
+  const rec = { t: state.type, d: date, c: f.cat.value, a: amount, m: f.memo.value.trim(), p: state.type === 'e' ? f.pay.value : '' };
+  state.date = date; state.cat = rec.c; if (rec.p) state.pay = rec.p;
+  let entry;
+  if (state.editing && state.entries[state.editing]) {
+    entry = { ...state.entries[state.editing], ...rec };
+    state.editing = null;
+    flash(t('editSaved'));
+  } else {
+    state.editing = null;
+    entry = { id: newId(), ...rec, createdAt: Date.now() };
+    flash(t('saved'));
+  }
+  state.entries[entry.id] = entry;
+  Core.putDoc(COL, entry.id, toDoc(entry)).catch(() => {});
+  resetEntryInputs();
+  render();
+  syncForm();
+  f.amount.focus({ preventScroll: true });
+}
+function startEdit(id) {
+  const e = state.entries[id];
+  if (!e) return;
+  state.editing = id; state.type = e.t; state.cat = e.c; state.pay = e.p || PAYS[0]; state.date = e.d;
+  syncForm();
+  f.amount.value = nf.format(e.a);
+  f.memo.value = e.m;
+  renderListArea();
+  f.form.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  f.amount.focus({ preventScroll: true });
+}
+function cancelEdit() {
+  state.editing = null;
+  state.date = defaultDate(state.ym);
+  resetEntryInputs();
+  syncForm();
+  renderListArea();
+  flash('');
+}
+function deleteEntry(id) {
+  delete state.entries[id];
+  state.confirmDel = null;
+  if (state.editing === id) { state.editing = null; resetEntryInputs(); syncForm(); }
+  Core.removeDoc(COL, id).catch(() => {});
+  render();
+  flash(t('deleted'));
+}
+
+/* ===================== 예산 ===================== */
+function saveBudget() {
+  const inp = $('#budgetInput');
+  const val = Number(String(inp.value).replace(/\D/g, ''));
+  if (!val) { inp.focus(); return; }
+  if (budgets === null) return;
+  budgets = { ...budgets, [state.ym]: val };
+  state.budgetEditing = false;
+  Core.saveSettings('budget', { budgets }).catch(() => {});
+  render();
+}
+
+/* ===================== 달 이동: 보고 있는 달의 기록만 읽음 ===================== */
+function go(ym) {
+  state.ym = ym;
+  state.filter = { day: null, cat: null };
+  state.editing = null; state.confirmDel = null; state.budgetEditing = false;
+  state.date = defaultDate(ym);
+  state.entries = {}; state.loaded = false;
+  resetEntryInputs();
+  syncForm();
+  render();
+  if (unsubMonth) unsubMonth();
+  unsubMonth = Core.watchRange(COL, 'd', `${ym}-01`, `${ym}-31`, (docs, meta) => {
+    if (state.ym !== ym) return;
+    const next = {};
+    for (const d of docs) { const e = fromDoc(d.id, d.data); if (e && e.d.startsWith(ym)) next[e.id] = e; }
+    state.entries = next;
+    const first = !state.loaded;
+    state.loaded = true;
+    if (state.editing && !next[state.editing]) { state.editing = null; resetEntryInputs(); }
+    render();
+    if (first) syncForm();
+  });
+}
+
+/* ===================== CSV ===================== */
+const csvQ = (s, text) => {
+  s = String(s);
+  if (text && /^[=+\-@]/.test(s)) s = "'" + s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
+function toCsv(list) {
+  const rows = [L.csvHead.join(',')].concat(list.map(e => [e.d, e.t === 'e' ? t('exp') : t('inc'), csvQ(label(e.c), 1), csvQ(e.m, 1), csvQ(e.p ? label(e.p) : '', 1), e.a].join(',')));
+  return '\uFEFF' + rows.join('\r\n');
+}
+function exportCsv() {
+  const list = compute().list;
+  if (!list.length) return toast(t('nothingExport'));
+  download(toCsv(list), `jizhangben_${state.ym}.csv`, 'text/csv;charset=utf-8');
+  toast(t('exported'));
+}
+// 모든 달 내역을 CSV로(설정의 백업, 전체 삭제 전 자동 백업)
+async function exportAll() {
+  const docs = await Core.readAll(COL);
+  const list = docs.map(d => fromDoc(d.id, d.data)).filter(Boolean).sort((a, b) => a.d.localeCompare(b.d) || a.createdAt - b.createdAt);
+  const hasBudget = budgets && Object.keys(budgets).length;
+  if (!list.length && !hasBudget) return 'empty';
+  download(toCsv(list), `jizhangben_backup_${todayYmd()}.csv`, 'text/csv;charset=utf-8');
+  LS.set('budget.lastBackup', Date.now());
+  return true;
+}
+function decodeCsv(buf) {
+  for (const enc of ['utf-8', 'gb18030', 'euc-kr']) {
+    try { return new TextDecoder(enc, { fatal: true }).decode(buf); } catch (e) { /* 다음 인코딩 */ }
+  }
+  return new TextDecoder('utf-8').decode(buf);
+}
+function parseCsv(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const rows = []; let row = [], fld = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { fld += '"'; i++; } else q = false; }
+      else fld += c;
+    } else if (c === '"' && fld === '') q = true;
+    else if (c === ',') { row.push(fld); fld = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(fld); rows.push(row); row = []; fld = '';
+    } else fld += c;
+  }
+  if (fld !== '' || row.length) { row.push(fld); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim() !== ''));
+}
+const HEAD = {
+  d: ['日期', '날짜', 'date'], t: ['类型', '구분', 'type'], c: ['分类', '분류', 'category'],
+  m: ['备注', '메모', '내용', 'memo', 'note'], p: ['支付方式', '결제수단', '결제 수단', 'payment'], a: ['金额', '금액', 'amount']
+};
+function rowsToEntries(rows) {
+  if (!rows.length) return { entries: [], bad: 0 };
+  const first = rows[0].map(x => x.trim().toLowerCase());
+  const col = {};
+  for (const k in HEAD) { const i = first.findIndex(h => HEAD[k].includes(h)); if (i >= 0) col[k] = i; }
+  let body = rows;
+  if (col.d !== undefined && col.a !== undefined) body = rows.slice(1);
+  else Object.assign(col, { d: 0, t: 1, c: 2, m: 3, p: 4, a: 5 });   // 머리줄이 없으면 내보내기 순서로
+  const cell = (r, k) => {
+    if (col[k] === undefined) return '';
+    let v = String(r[col[k]] ?? '').trim();
+    if (/^'[=+\-@]/.test(v)) v = v.slice(1);
+    return v;
+  };
+  const entries = []; let bad = 0;
+  for (const r of body) {
+    const dm = cell(r, 'd').match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    const amt = Math.round(Number(cell(r, 'a').replace(/[^\d.]/g, '')));
+    const tv = cell(r, 't').toLowerCase();
+    const ty = ['收入', '수입', 'i', 'income'].includes(tv) ? 'i' : ['支出', '지출', 'e', 'expense', ''].includes(tv) ? 'e' : null;
+    if (!dm || !ty || !(amt > 0)) { bad++; continue; }
+    const ym = `${dm[1]}-${pad(+dm[2])}`, day = +dm[3];
+    if (+dm[2] < 1 || +dm[2] > 12 || day < 1 || day > dim(ym)) { bad++; continue; }
+    entries.push({ d: `${ym}-${pad(day)}`, t: ty, a: amt, c: catCode(cell(r, 'c'), ty), m: cell(r, 'm').slice(0, 200), p: ty === 'e' ? payCode(cell(r, 'p')) : '' });
+  }
+  return { entries, bad };
+}
+async function importCsv(file) {
+  if (file.size > 5 * 1024 * 1024) return toast(t('csvBig'), { kind: 'err', ms: 7000 });
+  let text;
+  try { text = decodeCsv(await file.arrayBuffer()); } catch (e) { return toast(t('csvUnread'), { kind: 'err' }); }
+  const { entries, bad } = rowsToEntries(parseCsv(text));
+  if (!entries.length) return toast(bad ? t('csvNone') + t('csvBad', { n: bad }) : t('csvEmpty'), { kind: 'err', ms: 7000 });
+  const ds = entries.map(e => e.d).sort();
+  const tt = toast(t('importing'), { ms: 0 });
+  let existing;
+  try { existing = await Core.readRange(COL, 'd', ds[0], ds[ds.length - 1]); }
+  catch (e) { tt.dismiss(); return toast(t('readExistFail'), { kind: 'err', ms: 8000 }); }
+  // 이미 있는 내역과 한 건씩 비교: 똑같은 내역은 한 번만(같은 파일을 두 번 가져와도 늘지 않음)
+  const have = new Map();
+  for (const d of existing) { const e = fromDoc(d.id, d.data); if (!e) continue; const k = entryKey(e); have.set(k, (have.get(k) || 0) + 1); }
+  const writes = [], months = new Set(); let dup = 0, base = Date.now();
+  for (const e of entries) {
+    const k = entryKey(e), c = have.get(k) || 0;
+    if (c > 0) { have.set(k, c - 1); dup++; continue; }
+    const rec = { id: newId() + writes.length, ...e, createdAt: base++ };
+    writes.push([rec.id, toDoc(rec)]); months.add(e.d.slice(0, 7));
+  }
+  tt.dismiss();
+  if (!writes.length) return toast(t('allDup'));
+  Core.putMany(COL, writes).catch(() => {});
+  toast(L.imported(writes.length, months.size, dup, bad), { ms: 7000 });
+  const ms = [...months].sort();
+  if (!months.has(state.ym)) go(ms[ms.length - 1]);
+}
+
+/* ===================== 이전 记账本 HTML에서 옮기기 ===================== */
+async function importLegacy(file) {
+  let seed;
+  try {
+    const doc = new DOMParser().parseFromString(await file.text(), 'text/html');
+    seed = JSON.parse(doc.getElementById('ledger-data').textContent);
+  } catch (e) { seed = null; }
+  if (!seed || !seed.months || typeof seed.months !== 'object') return toast(t('legacyBad'), { kind: 'err', ms: 6000 });
+  const tt = toast(t('importing'), { ms: 0 });
+  let existing;
+  try { existing = new Set((await Core.readAll(COL)).map(d => d.id)); }
+  catch (e) { tt.dismiss(); return toast(t('needOnline'), { kind: 'err', ms: 7000 }); }
+  const writes = [], months = new Set(); let order = Date.now();
+  for (const [ym, list] of Object.entries(seed.months)) {
+    if (!/^\d{4}-\d{2}$/.test(ym) || !Array.isArray(list)) continue;
+    for (const r of list) {
+      if (!r || typeof r.d !== 'string' || !r.d.startsWith(ym) || !DATE_RE.test(r.d) || (r.t !== 'e' && r.t !== 'i') || !(Number(r.a) > 0)) continue;
+      const id = String(r.id || '').replace(/[^\w-]/g, '').slice(0, 40) || newId();
+      if (existing.has(id)) continue;
+      existing.add(id);
+      const e = { id, d: r.d, t: r.t, a: Math.round(Number(r.a)), c: catCode(r.c, r.t), m: String(r.m || '').slice(0, 200), p: r.t === 'e' ? payCode(r.p) : '', createdAt: order++ };
+      writes.push([id, toDoc(e)]); months.add(ym);
+    }
+  }
+  const add = {};
+  if (seed.budgets && typeof seed.budgets === 'object') {
+    for (const [k, v] of Object.entries(seed.budgets)) if (/^\d{4}-\d{2}$/.test(k) && !(k in (budgets || {})) && Number(v) > 0) add[k] = Math.round(Number(v));
+  }
+  tt.dismiss();
+  const nb = Object.keys(add).length;
+  if (!writes.length && !nb) return toast(t('legacyNone'));
+  if (writes.length) Core.putMany(COL, writes).catch(() => {});
+  if (nb) { budgets = { ...(budgets || {}), ...add }; Core.saveSettings('budget', { budgets }).catch(() => {}); }
+  toast(t('legacyDone', { n: writes.length, b: nb ? t('legacyBudgets', { n: nb }) : '' }), { ms: 7000 });
+  const ms = [...months].sort();
+  if (ms.length && !months.has(state.ym)) go(ms[ms.length - 1]); else render();
+}
+
+/* ===================== 전체 삭제(공통 모듈이 백업 → 직접 입력 확인 → 이 함수 순서로 부름) ===================== */
+async function wipeLedger() {
+  const docs = await Core.readAll(COL);
+  if (docs.length) await Core.removeMany(COL, docs.map(d => d.id));
+  await Core.saveSettings('budget', { budgets: Core.deleteField() });
+  budgets = {}; state.entries = {}; state.editing = null;
+  render(); syncForm();
+}
+
+/* ===================== 설정 ===================== */
+function renderSettings() {
+  $('#appSettings').innerHTML = `
+    <div class="set-sec"><h3>${esc(t('uiLang'))}</h3><div class="seg" role="group" aria-label="${esc(t('uiLang'))}">
+      <button data-ui="ko" lang="ko" aria-pressed="${cfg.uiLang === 'ko'}">한국어</button><button data-ui="zh" lang="zh-CN" aria-pressed="${cfg.uiLang === 'zh'}">中文</button></div></div>
+    <div class="set-sec"><h3>${esc(t('backup'))}</h3><p>${esc(t('backupDesc'))}</p>
+      <div class="set-row"><button class="btn" data-s="backup">${esc(t('backupBtn'))}</button></div></div>
+    <div class="set-sec"><h3>${esc(t('legacy'))}</h3><p>${esc(t('legacyDesc'))}</p>
+      <div class="set-row"><button class="btn" data-s="legacy">${esc(t('legacyBtn'))}</button></div></div>`;
+  wipeUI?.render();
+}
+function openSettings() { renderSettings(); $('#settingsDlg').showModal(); }
+$('#appSettings').addEventListener('click', async e => {
+  const ui = e.target.closest('[data-ui]');
+  if (ui) { setCfg({ uiLang: ui.dataset.ui }); return; }
+  const b = e.target.closest('[data-s]'); if (!b) return;
+  if (b.dataset.s === 'legacy') { $('#legacyFile').click(); return; }
+  if (b.dataset.s === 'backup') {
+    $('#settingsDlg').close();
+    try { const r = await exportAll(); toast(r === 'empty' ? t('nothingExport') : t('exported')); }
+    catch (err) { console.error(err); toast(t('needOnline'), { kind: 'err', ms: 7000 }); }
+  }
+});
+$('#settingsClose').onclick = () => $('#settingsDlg').close();
+function setCfg(partial, fromRemote) {
+  const langChanged = partial.uiLang && partial.uiLang !== cfg.uiLang;
+  Object.assign(cfg, partial); LS.set('budget.settings', cfg);
+  if (langChanged) applyLang();
+  if ($('#settingsDlg').open) renderSettings();
+  if (!fromRemote) Core.saveSettings('budget', partial).catch(() => {});
+}
+function applyLang() {
+  L = D[cfg.uiLang];
+  Core.setLang(cfg.uiLang);
+  const app = Core.APPS.find(a => a.key === 'budget');
+  document.title = app.name[cfg.uiLang];
+  $$('[data-i]').forEach(el => { el.textContent = t(el.dataset.i); });
+  $('#prevBtn').setAttribute('aria-label', t('prevMonth')); $('#nextBtn').setAttribute('aria-label', t('nextMonth'));
+  f.memo.placeholder = t('memoPh');
+  if (state.ym) { syncForm(); render(); }
+}
+
+/* ===================== 이벤트 ===================== */
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]');
+  if (state.confirmDel && !(el && el.dataset.act === 'del' && el.dataset.id === state.confirmDel)) {
+    state.confirmDel = null; renderListArea();
+  }
+  if (!el) return;
+  const a = el.dataset.act;
+  if (a === 'prev') go(shift(state.ym, -1));
+  else if (a === 'next') go(shift(state.ym, 1));
+  else if (a === 'today') go(curYm());
+  else if (a === 'day') {
+    const d = +el.dataset.day;
+    state.filter.day = state.filter.day === d ? null : d;
+    if (state.filter.day && !state.editing) { state.date = `${state.ym}-${pad(d)}`; f.date.value = state.date; }
+    $$('.day').forEach(b => { b.tabIndex = +b.dataset.day === d ? 0 : -1; });
+    applyFilterUI();
+  }
+  else if (a === 'cat') { state.filter.cat = state.filter.cat === el.dataset.cat ? null : el.dataset.cat; applyFilterUI(); }
+  else if (a === 'clear') { state.filter = { day: null, cat: null }; applyFilterUI(); }
+  else if (a === 'edit') startEdit(el.dataset.id);
+  else if (a === 'del') {
+    if (state.confirmDel === el.dataset.id) deleteEntry(el.dataset.id);
+    else { state.confirmDel = el.dataset.id; renderListArea(); $$('.e-del').find(b => b.dataset.id === el.dataset.id)?.focus(); }
+  }
+  else if (a === 'budget-edit') { state.budgetEditing = true; render(); $('#budgetInput')?.focus(); }
+  else if (a === 'budget-cancel') { state.budgetEditing = false; render(); }
+  else if (a === 'budget-save') saveBudget();
+  else if (a === 'export') exportCsv();
+  else if (a === 'import') $('#csvFile').click();
+});
+document.addEventListener('input', ev => {
+  const el = ev.target;
+  if (el.matches && el.matches('[data-money]')) {
+    const d = el.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 11);
+    el.value = d ? nf.format(Number(d)) : '';
+  }
+});
+document.addEventListener('keydown', ev => {
+  if (ev.target.id === 'budgetInput') {
+    if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); saveBudget(); }
+    else if (ev.key === 'Escape') { state.budgetEditing = false; render(); }
+  }
+});
+$('#sky').addEventListener('keydown', ev => {
+  if (!ev.target.classList || !ev.target.classList.contains('day')) return;
+  const btns = $$('.day', ev.currentTarget), i = btns.indexOf(ev.target);
+  let j = i;
+  if (ev.key === 'ArrowRight') j = Math.min(i + 1, btns.length - 1);
+  else if (ev.key === 'ArrowLeft') j = Math.max(i - 1, 0);
+  else if (ev.key === 'Home') j = 0;
+  else if (ev.key === 'End') j = btns.length - 1;
+  else return;
+  ev.preventDefault();
+  btns[i].tabIndex = -1; btns[j].tabIndex = 0; btns[j].focus();
+});
+f.form.addEventListener('submit', ev => { ev.preventDefault(); submitEntry(); });
+f.cancel.addEventListener('click', cancelEdit);
+f.radios.forEach(r => r.addEventListener('change', () => {
+  if (!r.checked) return;
+  state.type = r.value;
+  state.cat = CATS[state.type][0];
+  syncForm();
+}));
+f.date.addEventListener('change', () => { state.date = f.date.value; });
+f.cat.addEventListener('change', () => { state.cat = f.cat.value; });
+f.pay.addEventListener('change', () => { state.pay = f.pay.value; });
+$('#csvFile').addEventListener('change', ev => { const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (file) importCsv(file); });
+$('#legacyFile').addEventListener('change', ev => { const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (file) { $('#settingsDlg').close(); importLegacy(file); } });
+// 자정을 넘기거나 오래 열어 둔 뒤 돌아오면 '오늘' 표시를 새로
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.ym) render(); });
+
+/* ===================== 시작 ===================== */
+applyLang();
+await Core.init({ app: 'budget', lang: cfg.uiLang, root: '../' });
+Core.mountAppbar({ onSettings: openSettings });
+Core.mountCommonSettings($('#commonBox'));
+wipeUI = Core.mountWipeSection($('#wipeBox'), { label: () => t('wipe'), count: () => 1, backup: exportAll, wipe: wipeLedger });
+applyLang();
+Core.watchSettings('budget', d => {
+  if (d.uiLang && d.uiLang !== cfg.uiLang) setCfg({ uiLang: d.uiLang }, true);
+  budgets = d.budgets && typeof d.budgets === 'object' ? { ...d.budgets } : {};
+  if (state.ym && !state.budgetEditing) render();
+});
+go(curYm());
+</script>
+</body>
+</html>
