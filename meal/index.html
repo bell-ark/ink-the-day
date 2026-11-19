@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ko" data-app="meal">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EEF3F0">
+<title>끼니결</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<link rel="stylesheet" href="../shared/base.css">
+<style>
+/* 이 앱에서만 쓰는 색 */
+:root[data-app="meal"]{--carb:#B8851F;--prot:#3F6EA3;--fat:#AE5C6E;--over:#B9612E;--st-under:#DDE7F1;--st-near:#CFE6D7;--st-over:#F3DACB;--line-soft:#E2E9E4}
+@media (prefers-color-scheme:dark){:root[data-app="meal"]:not([data-theme="light"]){--carb:#E0B358;--prot:#82A9D8;--fat:#D68C9D;--over:#E39A6A;--st-under:#1D2934;--st-near:#1E3327;--st-over:#3A2A20;--line-soft:#232A26}}
+:root[data-theme="dark"][data-app="meal"]{--carb:#E0B358;--prot:#82A9D8;--fat:#D68C9D;--over:#E39A6A;--st-under:#1D2934;--st-near:#1E3327;--st-over:#3A2A20;--line-soft:#232A26}
+
+.wrap{max-width:1060px;margin:0 auto;padding:12px 16px 120px}
+.link{background:none;border:0;padding:10px 2px;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;font-size:15px}
+.link:hover{text-decoration-thickness:2px}
+.muted{color:var(--muted)}
+
+/* 탭: 선택된 탭만 대표 색으로 채운 알약형 */
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:4px 0 2px;margin:0 -16px;padding-left:16px;padding-right:16px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;min-height:40px;padding:0 16px;font-size:15px;color:var(--muted)}
+.tabs button:hover{color:var(--ink);border-color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+
+/* 기간 이동 */
+.period{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;padding:18px 0 16px}
+.period-nav{display:flex;align-items:center;gap:12px;min-width:0}
+.period h1{margin:0;font-family:var(--title);font-weight:700;font-size:clamp(26px,6.4vw,38px);line-height:1.2}
+.period .sub{display:block;font-size:14px;color:var(--muted);font-weight:400;font-family:var(--ui)}
+.nav-btns{display:flex;gap:4px}
+.nav-btns .icon-btn{border:1px solid var(--line);color:var(--ink)}
+.period-actions{display:flex;gap:2px 14px;align-items:center;flex-wrap:wrap}
+.period-actions input[type="date"]{width:auto;padding:0 10px}
+.today-mark{display:inline-block;font-size:13px;font-family:var(--ui);font-weight:600;padding:1px 9px;border-radius:999px;background:var(--accent);color:var(--on-accent);vertical-align:6px;margin-left:8px}
+
+/* 하루 요약 */
+.summary{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:40px;border-top:2px solid var(--ink);border-bottom:1px solid var(--line);padding:20px 0 24px}
+@media (max-width:720px){.summary{grid-template-columns:1fr;gap:24px}}
+.kcal-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.kcal-big{font-size:clamp(52px,11vw,78px);font-weight:700;letter-spacing:-.04em;line-height:.95}
+.kcal-of{color:var(--muted);font-size:16px}
+.track{position:relative;height:8px;background:var(--line-soft);border-radius:4px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:4px}
+.kcal-track{margin-top:16px;height:10px;border-radius:5px}
+.kcal-note{margin:8px 0 0;font-size:15px}
+.split-title{margin-top:22px;font-size:13px;color:var(--muted)}
+.split{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line-soft);margin-top:6px;gap:2px}
+.split i{display:block;height:100%}
+.split-legend{display:flex;gap:4px 16px;margin-top:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.macro-col{align-self:center}
+.goal-row{margin-bottom:18px}
+.goal-row:last-child{margin-bottom:0}
+.goal-row .lbl{display:flex;justify-content:space-between;gap:12px;font-size:15px;margin-bottom:7px}
+.goal-row .lbl span:last-child{color:var(--muted)}
+.goal-row .lbl b{color:var(--ink);font-weight:600}
+
+/* 식사 목록 */
+.sec-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:30px 0 8px}
+h2{margin:0;font-size:17px;font-weight:600}
+.count{font-size:13px;color:var(--muted);font-weight:400;margin-left:8px}
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--ink)}
+.meal{display:grid;grid-template-columns:52px minmax(0,1fr) auto auto;gap:0 14px;align-items:center;border-bottom:1px solid var(--line-soft)}
+.meal time{color:var(--muted);font-size:15px}
+.row-main{text-align:left;background:none;border:0;padding:12px 0;min-width:0;min-height:44px;color:inherit;display:block}
+.r-name{display:block;font-weight:600;overflow-wrap:anywhere}
+.r-sub{display:block;font-size:13px;color:var(--muted);font-weight:400}
+.r-nums{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.r-nums b{display:block;font-size:16px;color:var(--ink);font-weight:600}
+.r-del{background:none;border:0;padding:10px 4px;min-height:44px;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+@media (max-width:560px){
+  .meal{grid-template-columns:44px minmax(0,1fr) auto;gap:0 10px}
+  .meal time{grid-column:1;grid-row:1}
+  .meal .row-main{grid-column:2;grid-row:1 / span 2}
+  .meal .r-nums{grid-column:3;grid-row:1;padding-top:10px}
+  .meal .r-del{grid-column:3;grid-row:2;justify-self:end;padding-top:0;min-height:32px}
+}
+.empty{color:var(--muted);padding:22px 0;margin:0;border-bottom:1px solid var(--line-soft)}
+.empty .btn{margin-top:12px}
+
+/* 주간 */
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.wday{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:12px;min-height:190px;display:flex;flex-direction:column;min-width:0}
+.wday.today{box-shadow:inset 0 0 0 2px var(--accent);border-color:transparent}
+.wday-head{border:0;background:none;padding:0;text-align:left;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px;width:100%;min-height:44px;border-radius:6px;color:inherit}
+.wday-date{font-size:13px;color:var(--muted)}
+.wday-date b{font-size:20px;color:var(--ink);margin-right:3px;font-weight:700}
+.wday-kcal{font-size:13px;display:flex;align-items:center;white-space:nowrap}
+.wday ul{list-style:none;margin:6px 0 0;padding:0;font-size:13px}
+.wday li{padding:4px 0;border-top:1px dashed var(--line);overflow-wrap:anywhere}
+.wday li .t{color:var(--muted);margin-right:6px}
+.wday .none{color:var(--muted);font-size:13px;margin-top:6px}
+@media (max-width:860px){
+  .week{grid-template-columns:1fr}
+  .wday{min-height:0}
+  .wday ul{columns:2;column-gap:20px}
+  .wday li{break-inside:avoid}
+}
+@media (max-width:480px){.wday ul{columns:1}}
+
+/* 통계 */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:26px;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.stat{padding:14px 18px 14px 0}
+.stat .k{color:var(--muted);font-size:13px}
+.stat .v{font-size:24px;font-weight:600;margin-top:2px}
+.stat .v small{font-size:14px;font-weight:400;color:var(--muted);margin-left:3px}
+.stat .split{margin-top:10px}
+
+/* 월간 */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal .wh{font-size:13px;color:var(--muted);text-align:center;padding:2px 0 4px}
+.cell{aspect-ratio:1 / .86;border-radius:10px;border:1px solid var(--line);background:var(--surface);padding:8px 9px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;min-width:0;color:inherit}
+.cell:hover{border-color:var(--muted)}
+.cell .d{font-size:14px;line-height:1}
+.cell .k{font-size:15px;font-weight:700;line-height:1.1}
+.cell .k small{font-size:11px;font-weight:400;color:var(--muted);margin-left:2px}
+.cell.under{background:var(--st-under);border-color:transparent}
+.cell.near{background:var(--st-near);border-color:transparent}
+.cell.over{background:var(--st-over);border-color:transparent}
+.cell.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.cell.today .d{font-weight:700;color:var(--accent-text)}
+.cell.future{opacity:.55}
+.cell.blank{visibility:hidden}
+@media (max-width:560px){
+  .cal{gap:4px}
+  .cell{aspect-ratio:1 / 1.15;padding:5px;border-radius:7px}
+  .cell .d,.cell .k{font-size:12px}
+  .cell .k small{display:none}
+}
+.legend{display:flex;gap:6px 18px;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--muted)}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:1px solid var(--line)}
+
+/* 음식 */
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.toolbar .input{flex:1;min-width:180px;width:auto}
+.food{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 14px;align-items:center;border-bottom:1px solid var(--line-soft)}
+.tag{display:inline-block;font-size:12px;font-weight:500;color:var(--accent-text);background:var(--soft);border-radius:999px;padding:0 8px;margin-left:6px;vertical-align:1px}
+
+/* 목표 */
+.goal-form{max-width:640px;border-top:2px solid var(--ink);padding-top:18px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:520px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.msg-err{font-size:13px;color:var(--err);margin:6px 0 0}
+
+/* 대화상자 */
+.dlg-wide{width:min(560px,calc(100vw - 24px))}
+.dlg-wide .dlg{max-height:calc(100dvh - 48px);overflow:auto}
+.dlg .fields{display:grid;gap:12px}
+.dlg .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.picker{background:var(--bg);border-radius:var(--r-ctl);padding:12px;margin:4px 0 16px}
+.picks{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pick{border:1px solid var(--line);background:var(--surface);border-radius:999px;min-height:36px;padding:0 12px;font-size:14px;color:var(--ink)}
+.pick:hover{border-color:var(--accent)}
+.pick small{color:var(--muted);margin-left:5px}
+.picks .hint{margin:0}
+.preview{padding:12px 14px;background:var(--bg);border-radius:10px;font-size:14px}
+.preview b{font-size:16px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;min-height:44px}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.dlg .note{font-size:13px}
+</style>
+</head>
+<body>
+<header id="appbar"></header>
+<main class="wrap">
+  <nav class="tabs" id="tabs" aria-label="">
+    <button type="button" data-view="day" data-i="tDay"></button>
+    <button type="button" data-view="week" data-i="tWeek"></button>
+    <button type="button" data-view="month" data-i="tMonth"></button>
+    <button type="button" data-view="foods" data-i="tFoods"></button>
+    <button type="button" data-view="goals" data-i="tGoals"></button>
+  </nav>
+  <div id="view"></div>
+</main>
+
+<dialog id="entryDlg" class="dlg-wide"><form class="dlg" id="entryForm" novalidate autocomplete="off">
+  <h2 id="eTitle"></h2>
+  <div class="picker">
+    <label class="field-label" for="eSearch" data-i="pickFrom"></label>
+    <input class="input" type="search" id="eSearch" style="margin-top:6px">
+    <div class="picks" id="ePicks"></div>
+  </div>
+  <div class="fields">
+    <div class="row2">
+      <div class="field"><label class="field-label" for="eTime" data-i="time"></label><input class="input" type="time" id="eTime"></div>
+      <div class="field"><label class="field-label" for="eAmount" data-i="amount"></label><input class="input num" type="number" id="eAmount" inputmode="decimal" min="0" step="any"></div>
+    </div>
+    <div class="field"><label class="field-label" for="eName" data-i="menuName"></label><input class="input" type="text" id="eName" maxlength="60"><p class="msg-err" id="eNameErr" data-i="needName" hidden></p></div>
+    <div class="field"><label class="field-label" for="eUnit" data-i="unit"></label><input class="input" type="text" id="eUnit" maxlength="40"></div>
+    <p class="hint" style="margin:0" data-i="perUnit"></p>
+    <div class="grid4">
+      <div class="field"><label class="field-label" for="eKcal">kcal</label><input class="input num" type="number" id="eKcal" inputmode="decimal" min="0" step="any"></div>
+      <div class="field"><label class="field-label" for="eCarb" data-i="carbG"></label><input class="input num" type="number" id="eCarb" inputmode="decimal" min="0" step="any"></div>
+      <div class="field"><label class="field-label" for="eProtein" data-i="proteinG"></label><input class="input num" type="number" id="eProtein" inputmode="decimal" min="0" step="any"></div>
+      <div class="field"><label class="field-label" for="eFat" data-i="fatG"></label><input class="input num" type="number" id="eFat" inputmode="decimal" min="0" step="any"></div>
+    </div>
+    <div class="preview num" id="ePreview" aria-live="polite"></div>
+    <label class="check"><input type="checkbox" id="eSave"><span id="eSaveLabel"></span></label>
+  </div>
+  <div class="dlg-actions"><button type="button" class="btn" data-close data-i="cancel"></button><button type="submit" class="btn primary" id="eSubmit"></button></div>
+</form></dialog>
+
+<dialog id="foodDlg" class="dlg-wide"><form class="dlg" id="foodForm" novalidate autocomplete="off">
+  <h2 id="fTitle"></h2>
+  <p class="note" id="fNote" hidden></p>
+  <div class="fields">
+    <div class="field"><label class="field-label" for="fName" data-i="foodName"></label><input class="input" type="text" id="fName" maxlength="60"><p class="msg-err" id="fNameErr" hidden></p></div>
+    <div class="field"><label class="field-label" for="fUnit" data-i="unit"></label><input class="input" type="text" id="fUnit" maxlength="40"></div>
+    <div class="grid4">
+      <div class="field"><label class="field-label" for="fKcal">kcal</label><input class="input num" type="number" id="fKcal" inputmode="decimal" min="0" step="any"></div>
+      <div class="field"><label class="field-label" for="fCarb" data-i="carbG"></label><input class="input num" type="number" id="fCarb" inputmode="decimal" min="0" step="any"></div>
+      <div class="field"><label class="field-label" for="fProtein" data-i="proteinG"></label><input class="input num" type="number" id="fProtein" inputmode="decimal" min="0" step="any"></div>
+      <div class="field"><label class="field-label" for="fFat" data-i="fatG"></label><input class="input num" type="number" id="fFat" inputmode="decimal" min="0" step="any"></div>
+    </div>
+  </div>
+  <div class="dlg-actions"><button type="button" class="link" id="fRevert" data-i="revertBase" hidden style="margin-right:auto"></button><button type="button" class="btn" data-close data-i="cancel"></button><button type="submit" class="btn primary" data-i="save"></button></div>
+</form></dialog>
+
+<dialog id="settingsDlg"><div class="dlg"><h2 data-i="settings"></h2><div id="appSettings"></div><div id="commonBox"></div><div id="wipeBox"></div><div class="dlg-actions"><button class="btn primary" id="settingsClose" data-i="close"></button></div></div></dialog>
+<input type="file" id="jsonFile" accept=".json,application/json" hidden>
+
+<script type="module">
+import * as Core from '../shared/core.js';
+import { BASE_FOODS, OLD_BASE_VALUES } from './foods.js';
+const { esc, toast, LS } = Core;
+
+/* ===================== 문구 ===================== */
+const D = {
+  ko: {
+    wd: ['일', '월', '화', '수', '목', '금', '토'],
+    tabsAria: '화면 선택', tDay: '하루', tWeek: '주간', tMonth: '월간', tFoods: '자주 먹는 음식', tGoals: '목표',
+    dayTitle: (m, d, w) => `${m}월 ${d}일 ${w}요일`, year: y => `${y}년`, ym: (y, m) => `${y}년 ${m}월`,
+    weekTitle: (m1, d1, m2, d2) => `${m1}월 ${d1}일 – ${m1 !== m2 ? m2 + '월 ' : ''}${d2}일`,
+    today: '오늘', toToday: '오늘로', thisWeek: '이번 주로', thisMonth: '이번 달로', pickDate: '날짜 고르기',
+    prevDay: '이전 날', nextDay: '다음 날', prevWeek: '이전 주', nextWeek: '다음 주', prevMonth: '이전 달', nextMonth: '다음 달',
+    carb: '탄수화물', protein: '단백질', fat: '지방', cS: '탄', pS: '단', fS: '지', carbG: '탄수화물 g', proteinG: '단백질 g', fatG: '지방 g',
+    left: '목표까지 {x} kcal 남았어요.', overK: '목표보다 {x} kcal 많아요.', noGoal: '목표 탭에서 하루 목표 칼로리를 정할 수 있어요.',
+    splitTitle: '칼로리 중 탄단지 비율', splitAria: '칼로리 중 탄단지 비율',
+    meals: '식사', addMeal: '식사 기록하기', loading: '불러오는 중…', noMealsDay: '이날은 아직 기록이 없어요.', firstMeal: '첫 식사 기록하기',
+    editHint: '눌러서 고치기', del: '삭제', deleted: '‘{n}’ 기록을 지웠어요.', undo: '되돌리기',
+    noRec: '기록 없음', dayAria: '{m}월 {d}일 하루 보기',
+    stDays: '기록한 날', stDaysV: '{n}<small>/ {t}일</small>', stAvg: '하루 평균 칼로리', stNear: '목표 범위에 든 날', stNearV: '{n}<small>일</small>', stMacro: '하루 평균 탄·단·지',
+    st: { none: '기록 없음', under: '목표보다 적음', near: '목표 범위 (±10%)', over: '목표보다 많음' }, goalBase: '하루 목표 {x} kcal 기준',
+    foodsCount: '{n}개', searchFood: '음식 이름 검색', addFood: '음식 추가', base: '기본', edited: '고친 기본',
+    noFoodMatch: '‘{q}’와 일치하는 음식이 없어요.', foodHidden: '‘{n}’을(를) 목록에서 지웠어요.', unitBasis: '{u} 기준',
+    goalsTitle: '하루 목표', goalsDesc: '하루 화면의 진행 막대와 월간 달력의 색이 이 값을 기준으로 바뀌어요.', goalCalc: '탄단지 목표로 계산하면 {x} kcal예요. (탄수화물·단백질 1g = 4kcal, 지방 1g = 9kcal)',
+    saveGoals: '목표 저장', goalsSaved: '목표를 저장했어요.',
+    addTitle: '식사 기록하기', editTitle: '식사 고치기', pickFrom: '자주 먹는 음식에서 불러오기', time: '시간', amount: '양 (배수)', menuName: '메뉴 이름', namePh: '예: 현미밥',
+    unit: '기준 단위 (선택)', unitPh: '예: 1공기, 100g', perUnit: '아래 값은 기준 단위 1개 기준이에요. 양을 바꾸면 합계에 곱해져요.', needName: '메뉴 이름을 입력해 주세요.',
+    preview: '합계 <b>{k} kcal</b> <span class="muted">탄수화물 {c}g, 단백질 {p}g, 지방 {f}g</span>',
+    saveToFoods: '자주 먹는 음식에 저장', updateFood: '저장된 ‘{n}’ 값을 이 값으로 바꾸기', record: '기록하기', saveEdit: '고친 내용 저장', recorded: '기록했어요.', edited2: '고친 내용을 저장했어요.',
+    noFoods: '저장한 음식이 없어요. 아래에 직접 입력하고 ‘자주 먹는 음식에 저장’을 체크하면 다음부터 여기서 불러올 수 있어요.',
+    foodNew: '음식 추가', foodEdit: '음식 고치기', foodName: '음식 이름', baseNote: '기본 음식이에요. 고치면 내 값으로 저장되고, 언제든 기본값으로 되돌릴 수 있어요.', revertBase: '기본값으로 되돌리기', reverted: '기본값으로 되돌렸어요.',
+    needFoodName: '음식 이름을 입력해 주세요.', dupFood: '‘{n}’은(는) 이미 있어요. 목록에서 그 음식을 고쳐 주세요.', foodSaved: '저장했어요.',
+    save: '저장', cancel: '취소', settings: '설정', close: '닫기', uiLang: '화면 언어',
+    backup: '백업', backupDesc: '식사 기록, 내가 추가·수정한 음식, 목표를 JSON 파일 하나로 내려받아요.', backupBtn: '백업 파일 내려받기', exported: '백업 파일을 내려받았어요.', nothingExport: '내보낼 기록이 없어요.',
+    importTitle: '백업 불러오기·이전 식단 기록에서 옮기기', importDesc: '끼니결 백업 파일이나, 예전 식단 기록 앱의 ‘백업 파일 내려받기’로 만든 파일을 고르세요. 지금 기록은 지우지 않고 없는 것만 더해요. 여러 번 골라도 같은 기록이 두 번 들어가지 않아요.', importBtn: 'JSON 파일 고르기',
+    importBad: '식단 기록 백업 파일이 아니에요.', importUnread: '이 파일을 읽을 수 없어요.', importing: '가져오는 중…', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.',
+    importDone: (m, f, g) => `${f ? `식사 ${m}건과 음식 ${f}개를` : `식사 ${m}건을`} 가져왔어요.${g ? ' 목표도 파일의 값으로 바꿨어요.' : ''}`, importNone: '새로 가져올 기록이 없어요. 이미 모두 들어와 있어요.',
+    hiddenTitle: '지운 기본 음식', hiddenDesc: '목록에서 지운 기본 음식 {n}개를 되살려요.', restoreBtn: '되살리기', restored: '기본 음식 {n}개를 되살렸어요.',
+    wipe: '모든 식사 기록·음식·목표 지우기'
+  },
+  zh: {
+    wd: ['日', '一', '二', '三', '四', '五', '六'],
+    tabsAria: '选择视图', tDay: '日', tWeek: '周', tMonth: '月', tFoods: '常吃的食物', tGoals: '目标',
+    dayTitle: (m, d, w) => `${m}月${d}日 周${w}`, year: y => `${y}年`, ym: (y, m) => `${y}年${m}月`,
+    weekTitle: (m1, d1, m2, d2) => `${m1}月${d1}日 – ${m1 !== m2 ? m2 + '月' : ''}${d2}日`,
+    today: '今天', toToday: '回到今天', thisWeek: '回到本周', thisMonth: '回到本月', pickDate: '选择日期',
+    prevDay: '前一天', nextDay: '后一天', prevWeek: '上一周', nextWeek: '下一周', prevMonth: '上个月', nextMonth: '下个月',
+    carb: '碳水', protein: '蛋白质', fat: '脂肪', cS: '碳', pS: '蛋', fS: '脂', carbG: '碳水 g', proteinG: '蛋白质 g', fatG: '脂肪 g',
+    left: '距离目标还差 {x} kcal。', overK: '比目标多 {x} kcal。', noGoal: '可以在“目标”页设置每日热量目标。',
+    splitTitle: '热量中的三大营养素占比', splitAria: '热量中的三大营养素占比',
+    meals: '餐食', addMeal: '记一餐', loading: '正在加载…', noMealsDay: '这一天还没有记录。', firstMeal: '记下第一餐',
+    editHint: '点击修改', del: '删除', deleted: '已删除“{n}”。', undo: '撤销',
+    noRec: '无记录', dayAria: '查看{m}月{d}日',
+    stDays: '有记录的天数', stDaysV: '{n}<small>/ {t} 天</small>', stAvg: '日均热量', stNear: '在目标范围内的天数', stNearV: '{n}<small>天</small>', stMacro: '日均碳水·蛋白质·脂肪',
+    st: { none: '无记录', under: '低于目标', near: '目标范围内 (±10%)', over: '高于目标' }, goalBase: '以每日目标 {x} kcal 为准',
+    foodsCount: '{n} 种', searchFood: '搜索食物名称', addFood: '添加食物', base: '默认', edited: '已改默认',
+    noFoodMatch: '没有与“{q}”匹配的食物。', foodHidden: '已从列表中删除“{n}”。', unitBasis: '按{u}',
+    goalsTitle: '每日目标', goalsDesc: '“日”视图的进度条和月历颜色都以这些数值为准。', goalCalc: '按三大营养素目标计算为 {x} kcal。（碳水、蛋白质 1g = 4kcal，脂肪 1g = 9kcal）',
+    saveGoals: '保存目标', goalsSaved: '目标已保存。',
+    addTitle: '记一餐', editTitle: '修改餐食', pickFrom: '从常吃的食物中选择', time: '时间', amount: '份量（倍数）', menuName: '菜名', namePh: '例：糙米饭',
+    unit: '基准单位（可选）', unitPh: '例：1碗、100g', perUnit: '下面的数值按 1 个基准单位计算，改变份量会按倍数计入合计。', needName: '请输入菜名。',
+    preview: '合计 <b>{k} kcal</b> <span class="muted">碳水 {c}g，蛋白质 {p}g，脂肪 {f}g</span>',
+    saveToFoods: '保存到常吃的食物', updateFood: '用这些数值更新已保存的“{n}”', record: '记录', saveEdit: '保存修改', recorded: '已记录。', edited2: '修改已保存。',
+    noFoods: '还没有保存的食物。在下方直接填写并勾选“保存到常吃的食物”，以后就能在这里选择。',
+    foodNew: '添加食物', foodEdit: '修改食物', foodName: '食物名称', baseNote: '这是默认食物。修改后会保存为你的数值，随时可以恢复默认值。', revertBase: '恢复默认值', reverted: '已恢复默认值。',
+    needFoodName: '请输入食物名称。', dupFood: '“{n}”已经存在，请在列表中修改它。', foodSaved: '已保存。',
+    save: '保存', cancel: '取消', settings: '设置', close: '关闭', uiLang: '界面语言',
+    backup: '备份', backupDesc: '把餐食记录、你添加或修改的食物和目标下载为一个 JSON 文件。', backupBtn: '下载备份文件', exported: '已下载备份文件。', nothingExport: '没有可导出的记录。',
+    importTitle: '导入备份 · 从旧版饮食记录迁移', importDesc: '选择知味录的备份文件，或旧版饮食记录用“下载备份文件”生成的文件。不会删除现有记录，只添加缺少的部分；重复选择也不会重复导入。', importBtn: '选择 JSON 文件',
+    importBad: '这不是饮食记录的备份文件。', importUnread: '无法读取这个文件。', importing: '正在导入…', needOnline: '请在联网状态下再试。',
+    importDone: (m, f, g) => `已导入 ${m} 条餐食${f ? `、${f} 种食物` : ''}。${g ? '目标也已改为文件中的数值。' : ''}`, importNone: '没有需要导入的新记录，已经全部导入过了。',
+    hiddenTitle: '已删除的默认食物', hiddenDesc: '恢复从列表中删除的 {n} 种默认食物。', restoreBtn: '恢复', restored: '已恢复 {n} 种默认食物。',
+    wipe: '删除所有餐食记录、食物和目标'
+  }
+};
+
+/* ===================== 상태 ===================== */
+const MACROS = [{ k: 'carb', s: 'cS', color: 'var(--carb)', kcal: 4 }, { k: 'protein', s: 'pS', color: 'var(--prot)', kcal: 4 }, { k: 'fat', s: 'fS', color: 'var(--fat)', kcal: 9 }];
+const DEF_GOALS = { kcal: 2000, carb: 250, protein: 100, fat: 65 };
+const BASE = BASE_FOODS.map(([id, name, unit, kcal, carb, protein, fat]) => ({ id, name, unit, kcal, carb, protein, fat }));
+const BASE_BY_ID = new Map(BASE.map(f => [f.id, f]));
+const BASE_BY_NAME = new Map(BASE.map(f => [norm(f.name), f]));
+
+const cfg = { uiLang: LS.get('meal.settings', {}).uiLang === 'zh' ? 'zh' : 'ko' };   // 기본은 한국어
+let L = D[cfg.uiLang];
+const t = (k, v = {}) => String(L[k] ?? k).replace(/\{(\w+)\}/g, (_, x) => v[x] ?? '');
+
+const state = {
+  view: ['day', 'week', 'month', 'foods', 'goals'].includes(LS.get('meal.view')) ? LS.get('meal.view') : 'day',
+  cur: today(), meals: {}, loaded: false, rangeKey: '',
+  userFoods: {}, foodsLoaded: false, goals: { ...DEF_GOALS }, hidden: [], baseUses: {}, settingsLoaded: false,
+  foodQuery: ''
+};
+let unsubRange = null, wipeUI = null;
+
+/* ===================== 도우미 ===================== */
+function norm(s) { return String(s || '').trim().toLowerCase(); }
+const $ = s => document.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const pad = n => String(n).padStart(2, '0');
+const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromKey = k => { const p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const addDays = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; };
+function today() { const x = new Date(); return new Date(x.getFullYear(), x.getMonth(), x.getDate()); }
+const startOfWeek = d => addDays(d, -d.getDay());          // 한 주는 일요일 시작
+const nowTime = () => { const x = new Date(); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+const num = v => { const n = parseFloat(v); return isFinite(n) && n >= 0 ? n : 0; };
+const r1 = n => Math.round(n * 10) / 10;
+const f0 = n => Math.round(n).toLocaleString('ko-KR');
+const f1 = n => r1(n).toLocaleString('ko-KR');
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/, TIME_RE = /^\d{2}:\d{2}$/;
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function download(text, filename, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* ===================== 데이터 모양 ===================== */
+// meals/{id}: { d, time, name, unit, amount, kcal, carb, protein, fat, food?, createdAt, updatedAt }
+function mealFrom(id, v) {
+  if (!v || !DATE_RE.test(v.d) || !String(v.name || '').trim()) return null;
+  return { id, d: v.d, time: TIME_RE.test(v.time) ? v.time : '12:00', name: String(v.name).slice(0, 60), unit: String(v.unit || '').slice(0, 40),
+    amount: v.amount === undefined ? 1 : num(v.amount), kcal: num(v.kcal), carb: num(v.carb), protein: num(v.protein), fat: num(v.fat),
+    food: typeof v.food === 'string' ? v.food : '', createdAt: Number(v.createdAt) || 0 };
+}
+const mealDoc = m => ({ d: m.d, time: m.time, name: m.name, unit: m.unit, amount: m.amount, kcal: m.kcal, carb: m.carb, protein: m.protein, fat: m.fat,
+  ...(m.food ? { food: m.food } : {}), createdAt: m.createdAt || Date.now(), updatedAt: Date.now() });
+// foods/{id}: 내가 추가한 음식(id f…) 또는 고친 기본 음식(id = 기본 음식 ID). { name, unit, kcal, carb, protein, fat, uses?, createdAt, updatedAt }
+function foodFrom(id, v) {
+  if (!v || !String(v.name || '').trim()) return null;
+  return { id, name: String(v.name).slice(0, 60), unit: String(v.unit || '').slice(0, 40), kcal: num(v.kcal), carb: num(v.carb), protein: num(v.protein), fat: num(v.fat),
+    uses: num(v.uses), createdAt: Number(v.createdAt) || 0 };
+}
+const foodDoc = f => ({ name: f.name, unit: f.unit, kcal: f.kcal, carb: f.carb, protein: f.protein, fat: f.fat,
+  ...(BASE_BY_ID.has(f.id) ? {} : { uses: f.uses || 0 }), createdAt: f.createdAt || Date.now(), updatedAt: Date.now() });
+
+// 화면에 보이는 음식 = 기본 음식(숨긴 것 제외, 고친 값 우선) + 내가 추가한 음식
+function allFoods() {
+  const hidden = new Set(state.hidden), out = [];
+  for (const b of BASE) {
+    if (hidden.has(b.id)) continue;
+    const o = state.userFoods[b.id];
+    out.push({ ...(o || b), id: b.id, base: true, edited: !!o, uses: state.baseUses[b.id] || 0 });
+  }
+  for (const f of Object.values(state.userFoods)) if (!BASE_BY_ID.has(f.id)) out.push({ ...f, base: false, edited: false });
+  return out;
+}
+const findFood = name => { const n = norm(name); return n ? allFoods().find(f => norm(f.name) === n) : null; };
+
+/* ===================== 계산 ===================== */
+const mealTotals = m => ({ kcal: m.kcal * m.amount, carb: m.carb * m.amount, protein: m.protein * m.amount, fat: m.fat * m.amount });
+function dayMeals(k) { return Object.values(state.meals).filter(m => m.d === k).sort((a, b) => a.time.localeCompare(b.time) || a.createdAt - b.createdAt); }
+function dayTotals(k) {
+  const s = { kcal: 0, carb: 0, protein: 0, fat: 0, count: 0 };
+  for (const m of dayMeals(k)) { const x = mealTotals(m); s.kcal += x.kcal; s.carb += x.carb; s.protein += x.protein; s.fat += x.fat; s.count++; }
+  return s;
+}
+function status(s) {
+  if (!s.count) return 'none';
+  const g = state.goals.kcal; if (!g) return 'near';
+  const r = s.kcal / g; return r < 0.9 ? 'under' : r <= 1.1 ? 'near' : 'over';
+}
+const statusColor = s => ({ none: 'var(--surface)', under: 'var(--st-under)', near: 'var(--st-near)', over: 'var(--st-over)' }[s]);
+function splitBar(s) {
+  const parts = MACROS.map(m => s[m.k] * m.kcal), sum = parts.reduce((a, b) => a + b, 0);
+  const legend = MACROS.map((m, i) => `<span><i class="dot" style="background:${m.color}"></i>${esc(t(m.k))} ${sum ? Math.round(parts[i] / sum * 100) + '%' : '–'}</span>`).join('');
+  const bar = sum ? `<div class="split" role="img" aria-label="${esc(t('splitAria') + ': ' + MACROS.map((m, i) => `${t(m.k)} ${Math.round(parts[i] / sum * 100)}%`).join(', '))}">`
+    + MACROS.map((m, i) => parts[i] > 0 ? `<i style="width:${(parts[i] / sum * 100).toFixed(2)}%;background:${m.color}"></i>` : '').join('') + '</div>'
+    : '<div class="split" aria-hidden="true"></div>';
+  return { bar, legend };
+}
+
+/* ===================== 보고 있는 기간의 기록만 읽음 ===================== */
+function rangeOf() {
+  const c = state.cur;
+  if (state.view === 'week') { const s = startOfWeek(c); return [keyOf(s), keyOf(addDays(s, 6))]; }
+  if (state.view === 'month') return [keyOf(new Date(c.getFullYear(), c.getMonth(), 1)), keyOf(new Date(c.getFullYear(), c.getMonth() + 1, 0))];
+  return [keyOf(c), keyOf(c)];
+}
+function watchCurrent() {
+  if (!['day', 'week', 'month'].includes(state.view)) return;
+  const [from, to] = rangeOf(), key = from + '~' + to;
+  if (key === state.rangeKey) return;
+  state.rangeKey = key; state.meals = {}; state.loaded = false;
+  if (unsubRange) unsubRange();
+  unsubRange = Core.watchRange('meals', 'd', from, to, docs => {
+    if (state.rangeKey !== key) return;
+    const next = {};
+    for (const d of docs) { const m = mealFrom(d.id, d.data); if (m && m.d >= from && m.d <= to) next[m.id] = m; }
+    state.meals = next; state.loaded = true;
+    render();
+  });
+}
+
+/* ===================== 그리기 ===================== */
+const ARROW = { prev: 'M15 5l-7 7 7 7', next: 'M9 5l7 7-7 7' };
+const navBtn = (act, label) => `<button type="button" class="icon-btn" data-act="${act}" aria-label="${esc(label)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ARROW[act]}"/></svg></button>`;
+function periodHead(title, sub, prevL, nextL, extra) {
+  return `<header class="period"><div class="period-nav"><h1>${title}${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</h1>
+    <div class="nav-btns">${navBtn('prev', prevL)}${navBtn('next', nextL)}</div></div><div class="period-actions">${extra || ''}</div></header>`;
+}
+
+function dayView() {
+  const c = state.cur, k = keyOf(c), isToday = k === keyOf(today()), s = dayTotals(k), g = state.goals;
+  const head = periodHead(esc(L.dayTitle(c.getMonth() + 1, c.getDate(), L.wd[c.getDay()])) + (isToday ? `<span class="today-mark">${esc(t('today'))}</span>` : ''),
+    L.year(c.getFullYear()), t('prevDay'), t('nextDay'),
+    (isToday ? '' : `<button type="button" class="link" data-act="today">${esc(t('toToday'))}</button>`)
+    + `<input type="date" class="input" value="${k}" aria-label="${esc(t('pickDate'))}" data-act-change="pickDate">`);
+  const over = g.kcal && s.kcal > g.kcal, pct = g.kcal ? Math.min(100, s.kcal / g.kcal * 100) : 0;
+  const note = g.kcal ? (over ? t('overK', { x: f0(s.kcal - g.kcal) }) : t('left', { x: f0(g.kcal - s.kcal) })) : t('noGoal');
+  const sb = splitBar(s);
+  const rows = MACROS.map(m => {
+    const goal = g[m.k], v = s[m.k], p = goal ? Math.min(100, v / goal * 100) : 0;
+    return `<div class="goal-row"><div class="lbl num"><span>${esc(t(m.k))}</span><span><b>${f1(v)}</b> / ${f0(goal)} g</span></div>
+      <div class="track"><i style="width:${p.toFixed(1)}%;background:${m.color}"></i></div></div>`;
+  }).join('');
+  const list = dayMeals(k);
+  let body;
+  if (!state.loaded) body = `<p class="empty">${esc(t('loading'))}</p>`;
+  else if (!list.length) body = `<div class="empty">${esc(t('noMealsDay'))}<br><button type="button" class="btn" data-act="add">${esc(t('firstMeal'))}</button></div>`;
+  else body = `<ul class="rows">` + list.map(m => {
+    const x = mealTotals(m), sub = [m.amount !== 1 ? '× ' + f1(m.amount) : '', m.unit].filter(Boolean).join(' ');
+    return `<li class="meal"><time class="num">${m.time}</time>
+      <button type="button" class="row-main" data-act="edit" data-id="${esc(m.id)}" aria-label="${esc(`${m.time} ${m.name} ${f0(x.kcal)} kcal, ${t('editHint')}`)}" title="${esc(t('editHint'))}">
+        <span class="r-name">${esc(m.name)}</span>${sub ? `<span class="r-sub">${esc(sub)}</span>` : ''}</button>
+      <span class="r-nums num"><b>${f0(x.kcal)} kcal</b>${esc(t('cS'))} ${f1(x.carb)} ${esc(t('pS'))} ${f1(x.protein)} ${esc(t('fS'))} ${f1(x.fat)}</span>
+      <button type="button" class="r-del" data-act="del" data-id="${esc(m.id)}" aria-label="${esc(m.name + ' ' + t('del'))}">${esc(t('del'))}</button></li>`;
+  }).join('') + `</ul>`;
+  return head + `<section class="summary">
+      <div><div class="kcal-line num"><span class="kcal-big">${f0(s.kcal)}</span><span class="kcal-of">/ ${f0(g.kcal)} kcal</span></div>
+        <div class="track kcal-track"><i style="width:${pct.toFixed(1)}%;background:${over ? 'var(--over)' : 'var(--accent)'}"></i></div>
+        <p class="kcal-note">${esc(note)}</p>
+        <div class="split-title">${esc(t('splitTitle'))}</div>${sb.bar}<div class="split-legend num">${sb.legend}</div></div>
+      <div class="macro-col">${rows}</div></section>
+    <div class="sec-head"><h2>${esc(t('meals'))}${list.length ? `<span class="count num">${list.length}</span>` : ''}</h2><button type="button" class="btn primary" data-act="add">${esc(t('addMeal'))}</button></div>
+    ${body}`;
+}
+
+function statsBlock(recs, total) {
+  const n = recs.length, avg = { kcal: 0, carb: 0, protein: 0, fat: 0 };
+  for (const s of recs) for (const k in avg) avg[k] += s[k];
+  if (n) for (const k in avg) avg[k] /= n;
+  const near = recs.filter(s => status(s) === 'near').length, sb = splitBar(avg);
+  return `<div class="stats num">
+    <div class="stat"><div class="k">${esc(t('stDays'))}</div><div class="v">${t('stDaysV', { n, t: total })}</div></div>
+    <div class="stat"><div class="k">${esc(t('stAvg'))}</div><div class="v">${n ? f0(avg.kcal) : '–'}<small>kcal</small></div></div>
+    <div class="stat"><div class="k">${esc(t('stNear'))}</div><div class="v">${t('stNearV', { n: near })}</div></div>
+    <div class="stat"><div class="k">${esc(t('stMacro'))}</div><div class="v" style="font-size:18px">${n ? `${f0(avg.carb)} · ${f0(avg.protein)} · ${f0(avg.fat)}<small>g</small>` : '–'}</div>${sb.bar}</div></div>`;
+}
+
+function weekView() {
+  const s = startOfWeek(state.cur), e = addDays(s, 6), tk = keyOf(today()), recs = [];
+  const head = periodHead(esc(L.weekTitle(s.getMonth() + 1, s.getDate(), e.getMonth() + 1, e.getDate())), L.year(s.getFullYear()), t('prevWeek'), t('nextWeek'),
+    keyOf(startOfWeek(today())) === keyOf(s) ? '' : `<button type="button" class="link" data-act="today">${esc(t('thisWeek'))}</button>`);
+  let days = '';
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(s, i), k = keyOf(d), tot = dayTotals(k), st = status(tot), list = dayMeals(k);
+    if (tot.count) recs.push(tot);
+    days += `<section class="wday${k === tk ? ' today' : ''}">
+      <button type="button" class="wday-head" data-act="goDay" data-date="${k}" aria-label="${esc(t('dayAria', { m: d.getMonth() + 1, d: d.getDate() }))}">
+        <span class="wday-date"><b class="num">${d.getDate()}</b>${esc(L.wd[d.getDay()])}</span>
+        ${tot.count ? `<span class="wday-kcal num"><i class="dot" style="background:${statusColor(st)};box-shadow:inset 0 0 0 1px var(--line)"></i>${f0(tot.kcal)} kcal</span>` : ''}</button>
+      ${list.length ? `<ul>${list.map(m => `<li><span class="t num">${m.time}</span>${esc(m.name)}</li>`).join('')}</ul>` : `<div class="none">${esc(state.loaded ? t('noRec') : t('loading'))}</div>`}
+    </section>`;
+  }
+  return head + `<div class="week">${days}</div>` + statsBlock(recs, 7);
+}
+
+function monthView() {
+  const y = state.cur.getFullYear(), m = state.cur.getMonth(), last = new Date(y, m + 1, 0).getDate();
+  const offset = new Date(y, m, 1).getDay(), td = today(), tk = keyOf(td), recs = [];
+  const head = periodHead(esc(L.ym(y, m + 1)), state.goals.kcal ? t('goalBase', { x: f0(state.goals.kcal) }) : '', t('prevMonth'), t('nextMonth'),
+    tk.slice(0, 7) === keyOf(state.cur).slice(0, 7) ? '' : `<button type="button" class="link" data-act="today">${esc(t('thisMonth'))}</button>`);
+  const cells = L.wd.map(w => `<div class="wh" aria-hidden="true">${esc(w)}</div>`);
+  for (let i = 0; i < offset; i++) cells.push('<div class="cell blank" aria-hidden="true"></div>');
+  for (let d = 1; d <= last; d++) {
+    const dt = new Date(y, m, d), k = keyOf(dt), tot = dayTotals(k), st = status(tot);
+    if (tot.count) recs.push(tot);
+    const cls = 'cell' + (st !== 'none' ? ' ' + st : '') + (k === tk ? ' today' : '') + (dt > td && !tot.count ? ' future' : '');
+    const lab = `${t('dayAria', { m: m + 1, d })}, ${tot.count ? f0(tot.kcal) + ' kcal, ' + L.st[st] : L.st.none}`;
+    cells.push(`<button type="button" class="${cls}" data-act="goDay" data-date="${k}" aria-label="${esc(lab)}"><span class="d num">${d}</span>${tot.count ? `<span class="k num">${f0(tot.kcal)}<small>kcal</small></span>` : '<span></span>'}</button>`);
+  }
+  const legend = ['under', 'near', 'over'].map(s => `<span><i class="sw" style="background:${statusColor(s)}"></i>${esc(L.st[s])}</span>`).join('')
+    + `<span><i class="sw" style="background:var(--surface)"></i>${esc(L.st.none)}</span>`;
+  return head + `<div class="cal">${cells.join('')}</div><div class="legend">${legend}</div>` + statsBlock(recs, last);
+}
+
+function foodsView() {
+  const foods = allFoods().sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const head = `<header class="period"><div class="period-nav"><h1>${esc(t('tFoods'))}<span class="sub num">${esc(t('foodsCount', { n: foods.length }))}</span></h1></div></header>`;
+  return head + `<div class="toolbar"><input class="input" type="search" id="foodSearch" placeholder="${esc(t('searchFood'))}" aria-label="${esc(t('searchFood'))}" value="${esc(state.foodQuery)}">
+    <button type="button" class="btn primary" data-act="addFood">${esc(t('addFood'))}</button></div>
+    <ul class="rows" id="foodRows">${foods.map(f => `<li class="food" data-name="${esc(norm(f.name))}">
+      <button type="button" class="row-main" data-act="editFood" data-id="${esc(f.id)}" title="${esc(t('editHint'))}">
+        <span class="r-name">${esc(f.name)}${f.base ? `<span class="tag">${esc(t(f.edited ? 'edited' : 'base'))}</span>` : ''}</span>${f.unit ? `<span class="r-sub">${esc(t('unitBasis', { u: f.unit }))}</span>` : ''}</button>
+      <span class="r-nums num"><b>${f0(f.kcal)} kcal</b>${esc(t('cS'))} ${f1(f.carb)} ${esc(t('pS'))} ${f1(f.protein)} ${esc(t('fS'))} ${f1(f.fat)}</span>
+      <button type="button" class="r-del" data-act="delFood" data-id="${esc(f.id)}" aria-label="${esc(f.name + ' ' + t('del'))}">${esc(t('del'))}</button></li>`).join('')}</ul>
+    <p class="empty" id="foodNoMatch" hidden></p>`;
+}
+function filterFoods() {
+  const q = norm(state.foodQuery); let shown = 0;
+  $$('#foodRows .food').forEach(r => { const ok = !q || r.dataset.name.includes(q); r.hidden = !ok; if (ok) shown++; });
+  const nm = $('#foodNoMatch'); if (nm) { nm.hidden = shown > 0; nm.textContent = t('noFoodMatch', { q: state.foodQuery.trim() }); }
+}
+
+function goalsView() {
+  const g = state.goals;
+  return `<header class="period"><div class="period-nav"><h1>${esc(t('goalsTitle'))}</h1></div></header>
+    <section class="goal-form"><p class="hint" style="margin:0 0 14px">${esc(t('goalsDesc'))}</p>
+    <div class="grid4">
+      <div class="field"><label class="field-label" for="gKcal">kcal</label><input class="input num" type="number" id="gKcal" min="0" step="any" inputmode="decimal" value="${g.kcal}"></div>
+      ${MACROS.map(m => `<div class="field"><label class="field-label" for="g_${m.k}">${esc(t(m.k + 'G'))}</label><input class="input num" type="number" id="g_${m.k}" min="0" step="any" inputmode="decimal" value="${g[m.k]}" data-goal></div>`).join('')}
+    </div><p class="hint num" id="goalCalc"></p>
+    <div style="margin-top:16px"><button type="button" class="btn primary" data-act="saveGoals">${esc(t('saveGoals'))}</button></div></section>`;
+}
+function updateGoalCalc() {
+  const el = $('#goalCalc'); if (!el) return;
+  el.textContent = t('goalCalc', { x: f0(num($('#g_carb').value) * 4 + num($('#g_protein').value) * 4 + num($('#g_fat').value) * 9) });
+}
+
+const VIEWS = { day: dayView, week: weekView, month: monthView, foods: foodsView, goals: goalsView };
+function render() {
+  $$('#tabs [data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
+  // 입력 중인 칸(검색·목표)이 다시 그려져 글자가 사라지지 않게: 그 화면은 데이터가 바뀌어도 필요한 때만 다시 그림
+  const ae = document.activeElement;
+  if (state.view === 'goals' && ae && ae.closest && ae.closest('.goal-form')) return;
+  const keepSearch = state.view === 'foods' && ae && ae.id === 'foodSearch';
+  $('#view').innerHTML = VIEWS[state.view]();
+  if (state.view === 'goals') updateGoalCalc();
+  if (state.view === 'foods') { filterFoods(); if (keepSearch) { const s = $('#foodSearch'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }
+  if ($('#entryDlg').open) renderPicks();
+}
+function setView(v) {
+  state.view = v; LS.set('meal.view', v);
+  watchCurrent(); render();
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+function move(dir) {
+  const c = state.cur;
+  state.cur = state.view === 'week' ? addDays(c, dir * 7) : state.view === 'month' ? new Date(c.getFullYear(), c.getMonth() + dir, 1) : addDays(c, dir);
+  watchCurrent(); render();
+}
+
+/* ===================== 식사 입력 ===================== */
+const e$ = id => document.getElementById(id);
+let editing = null, pickedFood = '';
+function openEntry(id) {
+  const m = id ? state.meals[id] : null;
+  editing = m ? m.id : null; pickedFood = m ? m.food : '';
+  e$('eTitle').textContent = t(m ? 'editTitle' : 'addTitle');
+  e$('eSubmit').textContent = t(m ? 'saveEdit' : 'record');
+  e$('eTime').value = m ? m.time : nowTime();
+  e$('eAmount').value = m ? m.amount : 1;
+  e$('eName').value = m ? m.name : ''; e$('eUnit').value = m ? m.unit : '';
+  e$('eKcal').value = m ? m.kcal : ''; e$('eCarb').value = m ? m.carb : ''; e$('eProtein').value = m ? m.protein : ''; e$('eFat').value = m ? m.fat : '';
+  e$('eSave').checked = false; e$('eSearch').value = ''; e$('eNameErr').hidden = true;
+  renderPicks(); updatePreview(); updateSaveLabel();
+  e$('entryDlg').showModal();
+  (m ? e$('eAmount') : e$('eSearch')).focus();
+}
+function renderPicks() {
+  const q = norm(e$('eSearch').value), box = e$('ePicks'), foods = allFoods();
+  if (!foods.length) { box.innerHTML = `<p class="hint">${esc(t('noFoods'))}</p>`; return; }
+  let list = q ? foods.filter(f => norm(f.name).includes(q)).sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name, 'ko'))
+    : foods.sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name, 'ko'));
+  list = list.slice(0, 10);
+  if (!list.length) { box.innerHTML = `<p class="hint">${esc(t('noFoodMatch', { q: e$('eSearch').value.trim() }))}</p>`; return; }
+  box.innerHTML = list.map(f => `<button type="button" class="pick" data-food="${esc(f.id)}">${esc(f.name)}<small class="num">${f0(f.kcal)} kcal</small></button>`).join('');
+}
+function applyFood(f) {
+  pickedFood = f.id;
+  e$('eName').value = f.name; e$('eUnit').value = f.unit;
+  e$('eKcal').value = f.kcal; e$('eCarb').value = f.carb; e$('eProtein').value = f.protein; e$('eFat').value = f.fat;
+  e$('eAmount').value = 1; e$('eSearch').value = ''; e$('eNameErr').hidden = true;
+  renderPicks(); updatePreview(); updateSaveLabel();
+  e$('eAmount').focus(); e$('eAmount').select();
+}
+function readEntry() {
+  return { name: e$('eName').value.trim(), unit: e$('eUnit').value.trim(), time: TIME_RE.test(e$('eTime').value) ? e$('eTime').value : nowTime(),
+    amount: e$('eAmount').value === '' ? 1 : num(e$('eAmount').value),
+    kcal: num(e$('eKcal').value), carb: num(e$('eCarb').value), protein: num(e$('eProtein').value), fat: num(e$('eFat').value) };
+}
+function updatePreview() {
+  const x = mealTotals(readEntry());
+  e$('ePreview').innerHTML = t('preview', { k: f0(x.kcal), c: f1(x.carb), p: f1(x.protein), f: f1(x.fat) });
+}
+function updateSaveLabel() {
+  const f = findFood(e$('eName').value);
+  e$('eSaveLabel').textContent = f ? t('updateFood', { n: f.name }) : t('saveToFoods');
+}
+function bumpUses(id) {
+  if (!id) return;
+  if (BASE_BY_ID.has(id)) {
+    const n = (state.baseUses[id] || 0) + 1; state.baseUses = { ...state.baseUses, [id]: n };
+    Core.saveSettings('mealUses', { [id]: n }).catch(() => {});
+  } else if (state.userFoods[id]) {
+    const f = { ...state.userFoods[id], uses: (state.userFoods[id].uses || 0) + 1 }; state.userFoods[id] = f;
+    Core.putDoc('foods', id, foodDoc(f)).catch(() => {});
+  }
+}
+function saveFood(f) {     // 기본 음식이면 같은 ID로 '고친 값'을, 아니면 내 음식으로 저장
+  const prev = state.userFoods[f.id];
+  const rec = { ...f, uses: prev ? prev.uses : (f.uses || 0), createdAt: prev ? prev.createdAt : Date.now() };
+  state.userFoods[f.id] = rec;
+  Core.putDoc('foods', f.id, foodDoc(rec)).catch(() => {});
+}
+e$('entryForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const v = readEntry();
+  if (!v.name) { e$('eNameErr').hidden = false; e$('eName').focus(); return; }
+  const prev = editing ? state.meals[editing] : null;
+  if (e$('eSave').checked) {
+    const ex = findFood(v.name);
+    const fd = { name: v.name, unit: v.unit, kcal: v.kcal, carb: v.carb, protein: v.protein, fat: v.fat };
+    if (ex) { saveFood({ ...ex, ...fd, id: ex.id }); pickedFood = ex.id; }
+    else { const id = newId('f'); saveFood({ id, ...fd, uses: 0 }); pickedFood = id; }
+  }
+  // 고른 음식의 이름을 바꿨으면 그 음식에서 온 기록이 아님
+  const pf = pickedFood && allFoods().find(f => f.id === pickedFood);
+  const food = pf && norm(pf.name) === norm(v.name) ? pickedFood : '';
+  const m = { ...(prev || { id: newId('m'), d: keyOf(state.cur), createdAt: Date.now() }), ...v, food };
+  if (food && (!prev || prev.food !== food)) bumpUses(food);
+  state.meals[m.id] = m;
+  Core.putDoc('meals', m.id, mealDoc(m)).catch(() => {});
+  e$('entryDlg').close();
+  render();
+  toast(t(prev ? 'edited2' : 'recorded'));
+});
+e$('ePicks').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-food]'); if (!b) return;
+  const f = allFoods().find(x => x.id === b.dataset.food); if (f) applyFood(f);
+});
+e$('eSearch').addEventListener('input', renderPicks);
+e$('eSearch').addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); e$('ePicks').querySelector('[data-food]')?.click(); }
+});
+['eAmount', 'eKcal', 'eCarb', 'eProtein', 'eFat'].forEach(id => e$(id).addEventListener('input', updatePreview));
+e$('eName').addEventListener('input', () => { e$('eNameErr').hidden = true; updateSaveLabel(); });
+
+function deleteMeal(id) {
+  const m = state.meals[id]; if (!m) return;
+  delete state.meals[id];
+  Core.removeDoc('meals', id).catch(() => {});
+  render();
+  toast(t('deleted', { n: m.name }), { action: t('undo'), onAction: () => { state.meals[m.id] = m; Core.putDoc('meals', m.id, mealDoc(m)).catch(() => {}); render(); }, ms: 6000 });
+}
+
+/* ===================== 음식 입력 ===================== */
+let editingFood = null;
+function openFood(id) {
+  const f = id ? allFoods().find(x => x.id === id) : null;
+  editingFood = f ? f.id : null;
+  e$('fTitle').textContent = t(f ? 'foodEdit' : 'foodNew');
+  e$('fNote').hidden = !(f && f.base); e$('fNote').textContent = t('baseNote');
+  e$('fRevert').hidden = !(f && f.base && f.edited);
+  e$('fName').value = f ? f.name : ''; e$('fUnit').value = f ? f.unit : '';
+  e$('fKcal').value = f ? f.kcal : ''; e$('fCarb').value = f ? f.carb : ''; e$('fProtein').value = f ? f.protein : ''; e$('fFat').value = f ? f.fat : '';
+  e$('fNameErr').hidden = true;
+  e$('foodDlg').showModal(); e$('fName').focus();
+}
+e$('fName').addEventListener('input', () => { e$('fNameErr').hidden = true; });
+e$('foodForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const name = e$('fName').value.trim(), err = e$('fNameErr');
+  if (!name) { err.textContent = t('needFoodName'); err.hidden = false; e$('fName').focus(); return; }
+  const dup = findFood(name);
+  if (dup && dup.id !== editingFood) { err.textContent = t('dupFood', { n: dup.name }); err.hidden = false; e$('fName').focus(); return; }
+  saveFood({ id: editingFood || newId('f'), name, unit: e$('fUnit').value.trim(), kcal: num(e$('fKcal').value), carb: num(e$('fCarb').value), protein: num(e$('fProtein').value), fat: num(e$('fFat').value) });
+  e$('foodDlg').close(); render(); toast(t('foodSaved'));
+});
+e$('fRevert').addEventListener('click', () => {
+  if (!editingFood || !BASE_BY_ID.has(editingFood)) return;
+  delete state.userFoods[editingFood];
+  Core.removeDoc('foods', editingFood).catch(() => {});
+  e$('foodDlg').close(); render(); toast(t('reverted'));
+});
+function deleteFood(id) {
+  const f = allFoods().find(x => x.id === id); if (!f) return;
+  let undo;
+  if (f.base) {       // 기본 음식은 숨김(설정에서 되살릴 수 있음)
+    state.hidden = [...new Set([...state.hidden, id])];
+    Core.saveSettings('meal', { hidden: state.hidden }).catch(() => {});
+    undo = () => { state.hidden = state.hidden.filter(x => x !== id); Core.saveSettings('meal', { hidden: state.hidden }).catch(() => {}); render(); };
+  } else {
+    const rec = state.userFoods[id]; delete state.userFoods[id];
+    Core.removeDoc('foods', id).catch(() => {});
+    undo = () => { state.userFoods[id] = rec; Core.putDoc('foods', id, foodDoc(rec)).catch(() => {}); render(); };
+  }
+  render();
+  toast(t('foodHidden', { n: f.name }), { action: t('undo'), onAction: undo, ms: 6000 });
+}
+$$('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+
+/* ===================== 백업·가져오기 ===================== */
+async function exportAll() {
+  const [meals, foods] = await Promise.all([Core.readAll('meals'), Core.readAll('foods')]);
+  const ml = meals.map(d => mealFrom(d.id, d.data)).filter(Boolean).sort((a, b) => a.d.localeCompare(b.d) || a.time.localeCompare(b.time));
+  const fl = foods.map(d => foodFrom(d.id, d.data)).filter(Boolean);
+  if (!ml.length && !fl.length && !state.hidden.length) return 'empty';
+  const data = { app: 'meal', version: 2, exportedAt: new Date().toISOString(), goals: state.goals, hidden: state.hidden, baseUses: state.baseUses,
+    foods: fl.map(f => ({ id: f.id, ...foodDoc(f) })), meals: ml.map(m => ({ id: m.id, ...mealDoc(m) })) };
+  download(JSON.stringify(data, null, 1), `끼니결-백업-${keyOf(today())}.json`, 'application/json');
+  LS.set('meal.lastBackup', Date.now());
+  return true;
+}
+const sameVals = (f, v) => v && String(f.unit || '') === v[0] && [f.kcal, f.carb, f.protein, f.fat].every((x, i) => Math.abs(num(x) - v[i + 1]) < 0.01);
+const cleanId = (s, p) => String(s || '').replace(/[^\w-]/g, '').slice(0, 40) || newId(p);
+function goalsFrom(g) {
+  if (!g || typeof g !== 'object') return null;
+  const out = { ...DEF_GOALS }; for (const k in out) if (g[k] !== undefined) out[k] = num(g[k]);
+  return out;
+}
+
+async function importJson(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { return toast(t('importUnread'), { kind: 'err', ms: 6000 }); }
+  if (!data || typeof data !== 'object') return toast(t('importBad'), { kind: 'err', ms: 6000 });
+  const isNew = data.app === 'meal' && Array.isArray(data.meals);
+  const isOld = !isNew && (data.entries && typeof data.entries === 'object' || Array.isArray(data.foods));
+  if (!isNew && !isOld) return toast(t('importBad'), { kind: 'err', ms: 6000 });
+
+  // 식사 목록 만들기
+  const incoming = [];
+  if (isNew) for (const r of data.meals) { const m = r && mealFrom(cleanId(r.id, 'm'), r); if (m) incoming.push(m); }
+  else if (data.entries) {
+    let order = Date.now();
+    for (const [d, list] of Object.entries(data.entries)) {
+      if (!DATE_RE.test(d) || !Array.isArray(list)) continue;
+      for (const e of list) { const m = e && mealFrom(cleanId(e.id, 'm'), { ...e, d, createdAt: order++ }); if (m) incoming.push(m); }
+    }
+  }
+  const tt = toast(t('importing'), { ms: 0 });
+  let have;
+  try {
+    const ds = incoming.map(m => m.d).sort();
+    have = new Set(ds.length ? (await Core.readRange('meals', 'd', ds[0], ds[ds.length - 1])).map(d => d.id) : []);
+  } catch (e) { tt.dismiss(); return toast(t('needOnline'), { kind: 'err', ms: 7000 }); }
+  const writes = [];
+  for (const m of incoming) { if (have.has(m.id)) continue; have.add(m.id); writes.push({ name: 'meals', id: m.id, val: mealDoc(m) }); }
+
+  // 음식
+  let foodAdded = 0; const uses = {};
+  const putFood = f => { state.userFoods[f.id] = f; writes.push({ name: 'foods', id: f.id, val: foodDoc(f) }); };
+  for (const r of (Array.isArray(data.foods) ? data.foods : [])) {
+    const f = r && foodFrom(cleanId(r.id, 'f'), r); if (!f) continue;
+    if (isNew) { if (!state.userFoods[f.id] || BASE_BY_ID.has(f.id)) { putFood(f); foodAdded++; } continue; }
+    // 예전 앱: 기본 음식(id base…)과 직접 넣은 음식이 한 목록에 섞여 있음
+    const def = BASE_BY_NAME.get(norm(f.name));
+    if (def) {
+      if (f.uses > (state.baseUses[def.id] || 0)) uses[def.id] = f.uses;
+      if (!sameVals(f, [def.unit, def.kcal, def.carb, def.protein, def.fat]) && !sameVals(f, OLD_BASE_VALUES[def.name]) && !state.userFoods[def.id]) { putFood({ ...f, id: def.id }); foodAdded++; }
+      continue;
+    }
+    if (/^base\d+$/.test(r.id) && !f.uses && sameVals(f, OLD_BASE_VALUES[f.name])) continue;   // 이번에 뺀 기본 음식(라볶이)은 안 쓴 경우만 건너뜀
+    if (findFood(f.name)) continue;
+    putFood({ ...f, id: /^base\d+$/.test(r.id) ? newId('f') : f.id }); foodAdded++;
+  }
+  // 목표·숨김·사용 횟수
+  const g = goalsFrom(data.goals), goalsChanged = g && JSON.stringify(g) !== JSON.stringify(state.goals);
+  const settings = {};
+  if (goalsChanged) { state.goals = g; settings.goals = g; }
+  if (isNew && Array.isArray(data.hidden)) {
+    const h = [...new Set([...state.hidden, ...data.hidden.filter(id => BASE_BY_ID.has(id))])];
+    if (h.length !== state.hidden.length) { state.hidden = h; settings.hidden = h; }
+  }
+  if (isNew && data.baseUses && typeof data.baseUses === 'object') for (const [id, n] of Object.entries(data.baseUses)) if (BASE_BY_ID.has(id) && num(n) > (state.baseUses[id] || 0)) uses[id] = num(n);
+  tt.dismiss();
+  const mealCount = writes.filter(w => w.name === 'meals').length;
+  if (!writes.length && !Object.keys(settings).length && !Object.keys(uses).length) return toast(t('importNone'));
+  if (writes.length) Core.writeBatch(writes).catch(() => {});
+  if (Object.keys(settings).length) Core.saveSettings('meal', settings).catch(() => {});
+  if (Object.keys(uses).length) { state.baseUses = { ...state.baseUses, ...uses }; Core.saveSettings('mealUses', uses).catch(() => {}); }
+  toast(L.importDone(mealCount, foodAdded, goalsChanged), { ms: 8000 });
+  // 가져온 기록이 있는 가장 최근 날로 이동
+  const lastD = incoming.filter(m => writes.some(w => w.id === m.id)).map(m => m.d).sort().pop();
+  if (lastD && ['day', 'week', 'month'].includes(state.view)) { state.cur = fromKey(lastD); watchCurrent(); }
+  render();
+}
+
+/* ===================== 전체 삭제(공통 모듈이 백업 → 직접 입력 확인 → 이 함수 순서로 부름) ===================== */
+async function wipeMeal() {
+  const [meals, foods] = await Promise.all([Core.readAll('meals'), Core.readAll('foods')]);
+  const ops = meals.map(d => ({ name: 'meals', id: d.id, del: true })).concat(foods.map(d => ({ name: 'foods', id: d.id, del: true })), [{ name: 'settings', id: 'mealUses', del: true }]);
+  await Core.writeBatch(ops);
+  await Core.saveSettings('meal', { goals: Core.deleteField(), hidden: Core.deleteField() });
+  state.meals = {}; state.userFoods = {}; state.goals = { ...DEF_GOALS }; state.hidden = []; state.baseUses = {};
+  render();
+}
+
+/* ===================== 설정 ===================== */
+function renderSettings() {
+  const nh = state.hidden.length;
+  $('#appSettings').innerHTML = `
+    <div class="set-sec"><h3>${esc(t('uiLang'))}</h3><div class="seg" role="group" aria-label="${esc(t('uiLang'))}">
+      <button data-ui="ko" lang="ko" aria-pressed="${cfg.uiLang === 'ko'}">한국어</button><button data-ui="zh" lang="zh-CN" aria-pressed="${cfg.uiLang === 'zh'}">中文</button></div></div>
+    <div class="set-sec"><h3>${esc(t('backup'))}</h3><p>${esc(t('backupDesc'))}</p>
+      <div class="set-row"><button class="btn" data-s="backup">${esc(t('backupBtn'))}</button></div></div>
+    <div class="set-sec"><h3>${esc(t('importTitle'))}</h3><p>${esc(t('importDesc'))}</p>
+      <div class="set-row"><button class="btn" data-s="import">${esc(t('importBtn'))}</button></div></div>
+    ${nh ? `<div class="set-sec"><h3>${esc(t('hiddenTitle'))}</h3><p>${esc(t('hiddenDesc', { n: nh }))}</p>
+      <div class="set-row"><button class="btn" data-s="restore">${esc(t('restoreBtn'))}</button></div></div>` : ''}`;
+  wipeUI?.render();
+}
+function openSettings() { renderSettings(); $('#settingsDlg').showModal(); }
+$('#appSettings').addEventListener('click', async e => {
+  const ui = e.target.closest('[data-ui]');
+  if (ui) { setCfg({ uiLang: ui.dataset.ui }); return; }
+  const b = e.target.closest('[data-s]'); if (!b) return;
+  if (b.dataset.s === 'import') { $('#jsonFile').click(); return; }
+  if (b.dataset.s === 'restore') {
+    const n = state.hidden.length; state.hidden = [];
+    Core.saveSettings('meal', { hidden: [] }).catch(() => {});
+    renderSettings(); render(); toast(t('restored', { n }));
+    return;
+  }
+  if (b.dataset.s === 'backup') {
+    $('#settingsDlg').close();
+    try { const r = await exportAll(); toast(r === 'empty' ? t('nothingExport') : t('exported')); }
+    catch (err) { console.error(err); toast(t('needOnline'), { kind: 'err', ms: 7000 }); }
+  }
+});
+$('#settingsClose').onclick = () => $('#settingsDlg').close();
+function setCfg(partial, fromRemote) {
+  const langChanged = partial.uiLang && partial.uiLang !== cfg.uiLang;
+  Object.assign(cfg, partial); LS.set('meal.settings', cfg);
+  if (langChanged) applyLang();
+  if ($('#settingsDlg').open) renderSettings();
+  if (!fromRemote) Core.saveSettings('meal', partial).catch(() => {});
+}
+function applyLang() {
+  L = D[cfg.uiLang];
+  Core.setLang(cfg.uiLang);
+  document.title = Core.APPS.find(a => a.key === 'meal').name[cfg.uiLang];
+  $$('[data-i]').forEach(el => { el.textContent = t(el.dataset.i); });
+  $('#tabs').setAttribute('aria-label', t('tabsAria'));
+  e$('eName').placeholder = t('namePh'); e$('eUnit').placeholder = t('unitPh'); e$('fUnit').placeholder = t('unitPh');
+  e$('eSearch').placeholder = t('searchFood');
+  render();
+}
+
+/* ===================== 이벤트 ===================== */
+$('#tabs').addEventListener('click', ev => { const b = ev.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
+$('#view').addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act;
+  if (a === 'prev') move(-1);
+  else if (a === 'next') move(1);
+  else if (a === 'today') { state.cur = today(); watchCurrent(); render(); }
+  else if (a === 'goDay') { state.cur = fromKey(el.dataset.date); setView('day'); }
+  else if (a === 'add') openEntry(null);
+  else if (a === 'edit') openEntry(el.dataset.id);
+  else if (a === 'del') deleteMeal(el.dataset.id);
+  else if (a === 'addFood') openFood(null);
+  else if (a === 'editFood') openFood(el.dataset.id);
+  else if (a === 'delFood') deleteFood(el.dataset.id);
+  else if (a === 'saveGoals') {
+    const g = { kcal: num($('#gKcal').value) }; MACROS.forEach(m => { g[m.k] = num($('#g_' + m.k).value); });
+    state.goals = g; Core.saveSettings('meal', { goals: g }).catch(() => {});
+    document.activeElement?.blur(); render(); toast(t('goalsSaved'));
+  }
+});
+$('#view').addEventListener('change', ev => {
+  if (ev.target.dataset.actChange === 'pickDate' && DATE_RE.test(ev.target.value)) { state.cur = fromKey(ev.target.value); watchCurrent(); render(); }
+});
+$('#view').addEventListener('input', ev => {
+  if (ev.target.id === 'foodSearch') { state.foodQuery = ev.target.value; filterFoods(); }
+  if (ev.target.matches('[data-goal]')) updateGoalCalc();
+});
+$('#jsonFile').addEventListener('change', ev => { const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (file) { $('#settingsDlg').close(); importJson(file); } });
+// 자정을 넘기거나 오래 열어 둔 뒤 돌아오면 '오늘' 표시를 새로
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') render(); });
+
+/* ===================== 시작 ===================== */
+applyLang();
+await Core.init({ app: 'meal', lang: cfg.uiLang, root: '../' });
+Core.mountAppbar({ onSettings: openSettings });
+Core.mountCommonSettings($('#commonBox'));
+wipeUI = Core.mountWipeSection($('#wipeBox'), { label: () => t('wipe'), count: () => 1, backup: exportAll, wipe: wipeMeal });
+applyLang();
+Core.watchSettings('meal', d => {
+  if (d.uiLang && d.uiLang !== cfg.uiLang) setCfg({ uiLang: d.uiLang }, true);
+  state.goals = goalsFrom(d.goals) || { ...DEF_GOALS };
+  state.hidden = Array.isArray(d.hidden) ? d.hidden.filter(id => BASE_BY_ID.has(id)) : [];
+  state.settingsLoaded = true;
+  render();
+});
+Core.watchSettings('mealUses', d => {
+  const u = {}; for (const [id, n] of Object.entries(d || {})) if (BASE_BY_ID.has(id)) u[id] = num(n);
+  state.baseUses = u;
+  if ($('#entryDlg').open) renderPicks();
+});
+Core.watchCollection('foods', docs => {
+  const next = {}; for (const d of docs) { const f = foodFrom(d.id, d.data); if (f) next[f.id] = f; }
+  state.userFoods = next; state.foodsLoaded = true;
+  render();
+});
+watchCurrent();
+render();
+</script>
+</body>
+</html>
