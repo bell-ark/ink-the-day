@@ -14,7 +14,7 @@ const ICON = {
 export const APPS = [
   { key: 'diary', path: 'diary/', name: { ko: '빛줍기', zh: '拾光集' }, desc: { ko: '일기장', zh: '日记' }, color: '#34437F', on: '#FFFFFF', ready: true },
   { key: 'budget', path: 'budget/', name: { ko: '살림결', zh: '烟火簿' }, desc: { ko: '가계부', zh: '记账' }, color: '#C2416F', on: '#FFF7F9', ready: true },
-  { key: 'meal', path: 'meal/', name: { ko: '끼니결', zh: '知味录' }, desc: { ko: '칼로리와 탄단지', zh: '热量与营养' }, color: '#2E6A58', on: '#FFFFFF', ready: false }
+  { key: 'meal', path: 'meal/', name: { ko: '끼니결', zh: '知味录' }, desc: { ko: '칼로리와 탄단지', zh: '热量与营养' }, color: '#2E6A58', on: '#FFFFFF', ready: true }
 ];
 // 이름에 한자가 있으면 중국어 글꼴 규칙(문장부호 모양)을 적용
 export const nameLang = s => /[\u3400-\u9fff]/.test(s) && !/[\uac00-\ud7af]/.test(s) ? 'zh-CN' : 'ko';
