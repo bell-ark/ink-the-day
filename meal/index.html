@@ -147,6 +147,9 @@ h2{margin:0;font-size:17px;font-weight:600}
 @media (max-width:520px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .hint{font-size:13px;color:var(--muted);margin:8px 0 0}
 .msg-err{font-size:13px;color:var(--err);margin:6px 0 0}
+.pct{font-size:13px;color:var(--muted)}
+.pct.out{color:var(--over);font-weight:600}
+.goal-actions{display:flex;gap:8px 18px;align-items:center;flex-wrap:wrap;margin-top:18px}
 
 /* 대화상자 */
 .dlg-wide{width:min(560px,calc(100vw - 24px))}
@@ -227,14 +230,14 @@ h2{margin:0;font-size:17px;font-weight:600}
 
 <script type="module">
 import * as Core from '../shared/core.js';
-import { BASE_FOODS, OLD_BASE_VALUES } from './foods.js';
+import { BASE_FOODS, UNIT_ZH, UNIT_ZH_BY_ID } from './foods.js';
 const { esc, toast, LS } = Core;
 
 /* ===================== 문구 ===================== */
 const D = {
   ko: {
     wd: ['일', '월', '화', '수', '목', '금', '토'],
-    tabsAria: '화면 선택', tDay: '하루', tWeek: '주간', tMonth: '월간', tFoods: '자주 먹는 음식', tGoals: '목표',
+    tabsAria: '화면 선택', tDay: '하루', tWeek: '주간', tMonth: '월간', tFoods: '먹을셈', tGoals: '목표',
     dayTitle: (m, d, w) => `${m}월 ${d}일 ${w}요일`, year: y => `${y}년`, ym: (y, m) => `${y}년 ${m}월`,
     weekTitle: (m1, d1, m2, d2) => `${m1}월 ${d1}일 – ${m1 !== m2 ? m2 + '월 ' : ''}${d2}일`,
     today: '오늘', toToday: '오늘로', thisWeek: '이번 주로', thisMonth: '이번 달로', pickDate: '날짜 고르기',
@@ -247,28 +250,28 @@ const D = {
     noRec: '기록 없음', dayAria: '{m}월 {d}일 하루 보기',
     stDays: '기록한 날', stDaysV: '{n}<small>/ {t}일</small>', stAvg: '하루 평균 칼로리', stNear: '목표 범위에 든 날', stNearV: '{n}<small>일</small>', stMacro: '하루 평균 탄·단·지',
     st: { none: '기록 없음', under: '목표보다 적음', near: '목표 범위 (±10%)', over: '목표보다 많음' }, goalBase: '하루 목표 {x} kcal 기준',
-    foodsCount: '{n}개', searchFood: '음식 이름 검색', addFood: '음식 추가', base: '기본', edited: '고친 기본',
+    foodsSub: '음식영양표 · {n}개', searchFood: '음식 이름 검색', addFood: '음식 추가', base: '기본', edited: '고친 기본',
     noFoodMatch: '‘{q}’와 일치하는 음식이 없어요.', foodHidden: '‘{n}’을(를) 목록에서 지웠어요.', unitBasis: '{u} 기준',
-    goalsTitle: '하루 목표', goalsDesc: '하루 화면의 진행 막대와 월간 달력의 색이 이 값을 기준으로 바뀌어요.', goalCalc: '탄단지 목표로 계산하면 {x} kcal예요. (탄수화물·단백질 1g = 4kcal, 지방 1g = 9kcal)',
+    goalsTitle: '하루 목표', goalsDesc: '하루 화면의 진행 막대와 월간 달력의 색이 이 값을 기준으로 바뀌어요. 칼로리를 바꾸면 지금 비율대로 탄단지가 다시 계산되고, 탄단지 하나를 바꾸면 칼로리는 그대로 두고 나머지 둘이 맞춰져요.', recNote: '권장 범위는 2025 한국인 영양소 섭취기준의 성인 에너지 적정비율이에요.', pctOf: '{p}% · 권장 {a}~{b}%', toRec: '권장 비율로 (탄 55 · 단 20 · 지 25)',
     saveGoals: '목표 저장', goalsSaved: '목표를 저장했어요.',
-    addTitle: '식사 기록하기', editTitle: '식사 고치기', pickFrom: '자주 먹는 음식에서 불러오기', time: '시간', amount: '양 (배수)', menuName: '메뉴 이름', namePh: '예: 현미밥',
+    addTitle: '식사 기록하기', editTitle: '식사 고치기', pickFrom: '먹을셈에서 불러오기', time: '시간', amount: '양 (배수)', menuName: '메뉴 이름', namePh: '예: 현미밥',
     unit: '기준 단위 (선택)', unitPh: '예: 1공기, 100g', perUnit: '아래 값은 기준 단위 1개 기준이에요. 양을 바꾸면 합계에 곱해져요.', needName: '메뉴 이름을 입력해 주세요.',
     preview: '합계 <b>{k} kcal</b> <span class="muted">탄수화물 {c}g, 단백질 {p}g, 지방 {f}g</span>',
-    saveToFoods: '자주 먹는 음식에 저장', updateFood: '저장된 ‘{n}’ 값을 이 값으로 바꾸기', record: '기록하기', saveEdit: '고친 내용 저장', recorded: '기록했어요.', edited2: '고친 내용을 저장했어요.',
-    noFoods: '저장한 음식이 없어요. 아래에 직접 입력하고 ‘자주 먹는 음식에 저장’을 체크하면 다음부터 여기서 불러올 수 있어요.',
+    saveToFoods: '먹을셈에 저장', updateFood: '저장된 ‘{n}’ 값을 이 값으로 바꾸기', record: '기록하기', saveEdit: '고친 내용 저장', recorded: '기록했어요.', edited2: '고친 내용을 저장했어요.',
+    noFoods: '저장한 음식이 없어요. 아래에 직접 입력하고 ‘먹을셈에 저장’을 체크하면 다음부터 여기서 불러올 수 있어요.',
     foodNew: '음식 추가', foodEdit: '음식 고치기', foodName: '음식 이름', baseNote: '기본 음식이에요. 고치면 내 값으로 저장되고, 언제든 기본값으로 되돌릴 수 있어요.', revertBase: '기본값으로 되돌리기', reverted: '기본값으로 되돌렸어요.',
     needFoodName: '음식 이름을 입력해 주세요.', dupFood: '‘{n}’은(는) 이미 있어요. 목록에서 그 음식을 고쳐 주세요.', foodSaved: '저장했어요.',
     save: '저장', cancel: '취소', settings: '설정', close: '닫기', uiLang: '화면 언어',
     backup: '백업', backupDesc: '식사 기록, 내가 추가·수정한 음식, 목표를 JSON 파일 하나로 내려받아요.', backupBtn: '백업 파일 내려받기', exported: '백업 파일을 내려받았어요.', nothingExport: '내보낼 기록이 없어요.',
-    importTitle: '백업 불러오기·이전 식단 기록에서 옮기기', importDesc: '끼니결 백업 파일이나, 예전 식단 기록 앱의 ‘백업 파일 내려받기’로 만든 파일을 고르세요. 지금 기록은 지우지 않고 없는 것만 더해요. 여러 번 골라도 같은 기록이 두 번 들어가지 않아요.', importBtn: 'JSON 파일 고르기',
-    importBad: '식단 기록 백업 파일이 아니에요.', importUnread: '이 파일을 읽을 수 없어요.', importing: '가져오는 중…', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.',
+    importTitle: '백업 불러오기', importDesc: '끼니결에서 내려받은 백업 파일을 고르세요. 지금 기록은 지우지 않고 없는 것만 더해요. 여러 번 골라도 같은 기록이 두 번 들어가지 않아요.', importBtn: '백업 파일 고르기',
+    importBad: '끼니결 백업 파일이 아니에요.', importUnread: '이 파일을 읽을 수 없어요.', importing: '가져오는 중…', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.',
     importDone: (m, f, g) => `${f ? `식사 ${m}건과 음식 ${f}개를` : `식사 ${m}건을`} 가져왔어요.${g ? ' 목표도 파일의 값으로 바꿨어요.' : ''}`, importNone: '새로 가져올 기록이 없어요. 이미 모두 들어와 있어요.',
     hiddenTitle: '지운 기본 음식', hiddenDesc: '목록에서 지운 기본 음식 {n}개를 되살려요.', restoreBtn: '되살리기', restored: '기본 음식 {n}개를 되살렸어요.',
     wipe: '모든 식사 기록·음식·목표 지우기'
   },
   zh: {
     wd: ['日', '一', '二', '三', '四', '五', '六'],
-    tabsAria: '选择视图', tDay: '日', tWeek: '周', tMonth: '月', tFoods: '常吃的食物', tGoals: '目标',
+    tabsAria: '选择视图', tDay: '日', tWeek: '周', tMonth: '月', tFoods: '心中有数', tGoals: '目标',
     dayTitle: (m, d, w) => `${m}月${d}日 周${w}`, year: y => `${y}年`, ym: (y, m) => `${y}年${m}月`,
     weekTitle: (m1, d1, m2, d2) => `${m1}月${d1}日 – ${m1 !== m2 ? m2 + '月' : ''}${d2}日`,
     today: '今天', toToday: '回到今天', thisWeek: '回到本周', thisMonth: '回到本月', pickDate: '选择日期',
@@ -281,21 +284,21 @@ const D = {
     noRec: '无记录', dayAria: '查看{m}月{d}日',
     stDays: '有记录的天数', stDaysV: '{n}<small>/ {t} 天</small>', stAvg: '日均热量', stNear: '在目标范围内的天数', stNearV: '{n}<small>天</small>', stMacro: '日均碳水·蛋白质·脂肪',
     st: { none: '无记录', under: '低于目标', near: '目标范围内 (±10%)', over: '高于目标' }, goalBase: '以每日目标 {x} kcal 为准',
-    foodsCount: '{n} 种', searchFood: '搜索食物名称', addFood: '添加食物', base: '默认', edited: '已改默认',
+    foodsSub: '食物营养表 · {n} 种', searchFood: '搜索食物名称', addFood: '添加食物', base: '默认', edited: '已改默认',
     noFoodMatch: '没有与“{q}”匹配的食物。', foodHidden: '已从列表中删除“{n}”。', unitBasis: '按{u}',
-    goalsTitle: '每日目标', goalsDesc: '“日”视图的进度条和月历颜色都以这些数值为准。', goalCalc: '按三大营养素目标计算为 {x} kcal。（碳水、蛋白质 1g = 4kcal，脂肪 1g = 9kcal）',
+    goalsTitle: '每日目标', goalsDesc: '“日”视图的进度条和月历颜色都以这些数值为准。修改热量时按当前比例重新计算三大营养素；修改其中一项时热量不变，另外两项随之调整。', recNote: '推荐范围来自《2025 韩国人营养素摄入标准》的成人能量适宜比例。', pctOf: '{p}% · 推荐 {a}～{b}%', toRec: '恢复推荐比例（碳 55 · 蛋 20 · 脂 25）',
     saveGoals: '保存目标', goalsSaved: '目标已保存。',
-    addTitle: '记一餐', editTitle: '修改餐食', pickFrom: '从常吃的食物中选择', time: '时间', amount: '份量（倍数）', menuName: '菜名', namePh: '例：糙米饭',
+    addTitle: '记一餐', editTitle: '修改餐食', pickFrom: '从“心中有数”中选择', time: '时间', amount: '份量（倍数）', menuName: '菜名', namePh: '例：糙米饭',
     unit: '基准单位（可选）', unitPh: '例：1碗、100g', perUnit: '下面的数值按 1 个基准单位计算，改变份量会按倍数计入合计。', needName: '请输入菜名。',
     preview: '合计 <b>{k} kcal</b> <span class="muted">碳水 {c}g，蛋白质 {p}g，脂肪 {f}g</span>',
-    saveToFoods: '保存到常吃的食物', updateFood: '用这些数值更新已保存的“{n}”', record: '记录', saveEdit: '保存修改', recorded: '已记录。', edited2: '修改已保存。',
-    noFoods: '还没有保存的食物。在下方直接填写并勾选“保存到常吃的食物”，以后就能在这里选择。',
+    saveToFoods: '保存到“心中有数”', updateFood: '用这些数值更新已保存的“{n}”', record: '记录', saveEdit: '保存修改', recorded: '已记录。', edited2: '修改已保存。',
+    noFoods: '还没有保存的食物。在下方直接填写并勾选“保存到‘心中有数’”，以后就能在这里选择。',
     foodNew: '添加食物', foodEdit: '修改食物', foodName: '食物名称', baseNote: '这是默认食物。修改后会保存为你的数值，随时可以恢复默认值。', revertBase: '恢复默认值', reverted: '已恢复默认值。',
     needFoodName: '请输入食物名称。', dupFood: '“{n}”已经存在，请在列表中修改它。', foodSaved: '已保存。',
     save: '保存', cancel: '取消', settings: '设置', close: '关闭', uiLang: '界面语言',
     backup: '备份', backupDesc: '把餐食记录、你添加或修改的食物和目标下载为一个 JSON 文件。', backupBtn: '下载备份文件', exported: '已下载备份文件。', nothingExport: '没有可导出的记录。',
-    importTitle: '导入备份 · 从旧版饮食记录迁移', importDesc: '选择知味录的备份文件，或旧版饮食记录用“下载备份文件”生成的文件。不会删除现有记录，只添加缺少的部分；重复选择也不会重复导入。', importBtn: '选择 JSON 文件',
-    importBad: '这不是饮食记录的备份文件。', importUnread: '无法读取这个文件。', importing: '正在导入…', needOnline: '请在联网状态下再试。',
+    importTitle: '导入备份', importDesc: '选择从知味录下载的备份文件。不会删除现有记录，只添加缺少的部分；重复选择也不会重复导入。', importBtn: '选择备份文件',
+    importBad: '这不是知味录的备份文件。', importUnread: '无法读取这个文件。', importing: '正在导入…', needOnline: '请在联网状态下再试。',
     importDone: (m, f, g) => `已导入 ${m} 条餐食${f ? `、${f} 种食物` : ''}。${g ? '目标也已改为文件中的数值。' : ''}`, importNone: '没有需要导入的新记录，已经全部导入过了。',
     hiddenTitle: '已删除的默认食物', hiddenDesc: '恢复从列表中删除的 {n} 种默认食物。', restoreBtn: '恢复', restored: '已恢复 {n} 种默认食物。',
     wipe: '删除所有餐食记录、食物和目标'
@@ -304,8 +307,17 @@ const D = {
 
 /* ===================== 상태 ===================== */
 const MACROS = [{ k: 'carb', s: 'cS', color: 'var(--carb)', kcal: 4 }, { k: 'protein', s: 'pS', color: 'var(--prot)', kcal: 4 }, { k: 'fat', s: 'fS', color: 'var(--fat)', kcal: 9 }];
-const DEF_GOALS = { kcal: 2000, carb: 250, protein: 100, fat: 65 };
-const BASE = BASE_FOODS.map(([id, name, unit, kcal, carb, protein, fat]) => ({ id, name, unit, kcal, carb, protein, fat }));
+// 2025 한국인 영양소 섭취기준(보건복지부)의 성인 에너지 적정비율과, 그 안에서 고른 기본 비율
+const RANGE = { carb: [50, 65], protein: [10, 20], fat: [15, 30] };
+const DEF_RATIO = { carb: 0.55, protein: 0.20, fat: 0.25 };
+const KCAL_PER_G = { carb: 4, protein: 4, fat: 9 };
+const gramsFor = (K, r) => ({ carb: Math.round(K * r.carb / 4), protein: Math.round(K * r.protein / 4), fat: Math.round(K * r.fat / 9) });
+const DEF_GOALS = { kcal: 2000, ...gramsFor(2000, DEF_RATIO) };     // 275 · 100 · 56 g
+function ratioOf(g) {
+  const e = { carb: num(g.carb) * 4, protein: num(g.protein) * 4, fat: num(g.fat) * 9 }, sum = e.carb + e.protein + e.fat;
+  return sum ? { carb: e.carb / sum, protein: e.protein / sum, fat: e.fat / sum } : { ...DEF_RATIO };
+}
+const BASE = BASE_FOODS.map(([id, name, unit, kcal, carb, protein, fat]) => ({ id, name, unit, unitZh: UNIT_ZH_BY_ID[id] || UNIT_ZH[unit] || unit, kcal, carb, protein, fat }));
 const BASE_BY_ID = new Map(BASE.map(f => [f.id, f]));
 const BASE_BY_NAME = new Map(BASE.map(f => [norm(f.name), f]));
 
@@ -370,7 +382,8 @@ function allFoods() {
   for (const b of BASE) {
     if (hidden.has(b.id)) continue;
     const o = state.userFoods[b.id];
-    out.push({ ...(o || b), id: b.id, base: true, edited: !!o, uses: state.baseUses[b.id] || 0 });
+    const shown = o || { ...b, unit: cfg.uiLang === 'zh' ? b.unitZh : b.unit };
+    out.push({ ...shown, id: b.id, base: true, edited: !!o, uses: state.baseUses[b.id] || 0 });
   }
   for (const f of Object.values(state.userFoods)) if (!BASE_BY_ID.has(f.id)) out.push({ ...f, base: false, edited: false });
   return out;
@@ -517,7 +530,7 @@ function monthView() {
 
 function foodsView() {
   const foods = allFoods().sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-  const head = `<header class="period"><div class="period-nav"><h1>${esc(t('tFoods'))}<span class="sub num">${esc(t('foodsCount', { n: foods.length }))}</span></h1></div></header>`;
+  const head = `<header class="period"><div class="period-nav"><h1>${esc(t('tFoods'))}<span class="sub num">${esc(t('foodsSub', { n: foods.length }))}</span></h1></div></header>`;
   return head + `<div class="toolbar"><input class="input" type="search" id="foodSearch" placeholder="${esc(t('searchFood'))}" aria-label="${esc(t('searchFood'))}" value="${esc(state.foodQuery)}">
     <button type="button" class="btn primary" data-act="addFood">${esc(t('addFood'))}</button></div>
     <ul class="rows" id="foodRows">${foods.map(f => `<li class="food" data-name="${esc(norm(f.name))}">
@@ -533,19 +546,45 @@ function filterFoods() {
   const nm = $('#foodNoMatch'); if (nm) { nm.hidden = shown > 0; nm.textContent = t('noFoodMatch', { q: state.foodQuery.trim() }); }
 }
 
+let gRatio = { ...DEF_RATIO };       // 목표 화면에서 쓰는 지금 비율(칼로리 중 몫)
 function goalsView() {
-  const g = state.goals;
+  const g = state.goals; gRatio = ratioOf(g);
   return `<header class="period"><div class="period-nav"><h1>${esc(t('goalsTitle'))}</h1></div></header>
     <section class="goal-form"><p class="hint" style="margin:0 0 14px">${esc(t('goalsDesc'))}</p>
     <div class="grid4">
       <div class="field"><label class="field-label" for="gKcal">kcal</label><input class="input num" type="number" id="gKcal" min="0" step="any" inputmode="decimal" value="${g.kcal}"></div>
-      ${MACROS.map(m => `<div class="field"><label class="field-label" for="g_${m.k}">${esc(t(m.k + 'G'))}</label><input class="input num" type="number" id="g_${m.k}" min="0" step="any" inputmode="decimal" value="${g[m.k]}" data-goal></div>`).join('')}
-    </div><p class="hint num" id="goalCalc"></p>
-    <div style="margin-top:16px"><button type="button" class="btn primary" data-act="saveGoals">${esc(t('saveGoals'))}</button></div></section>`;
+      ${MACROS.map(m => `<div class="field"><label class="field-label" for="g_${m.k}">${esc(t(m.k + 'G'))}</label><input class="input num" type="number" id="g_${m.k}" min="0" step="1" inputmode="numeric" value="${g[m.k]}" data-goal="${m.k}" aria-describedby="pct_${m.k}"><span class="pct num" id="pct_${m.k}"></span></div>`).join('')}
+    </div><p class="hint">${esc(t('recNote'))}</p>
+    <div class="goal-actions"><button type="button" class="btn primary" data-act="saveGoals">${esc(t('saveGoals'))}</button>
+      <button type="button" class="link" data-act="recRatio">${esc(t('toRec'))}</button></div></section>`;
 }
-function updateGoalCalc() {
-  const el = $('#goalCalc'); if (!el) return;
-  el.textContent = t('goalCalc', { x: f0(num($('#g_carb').value) * 4 + num($('#g_protein').value) * 4 + num($('#g_fat').value) * 9) });
+function updatePct() {
+  const K = num($('#gKcal')?.value);
+  for (const m of MACROS) {
+    const el = $('#pct_' + m.k); if (!el) continue;
+    const p = K > 0 ? Math.round(num($('#g_' + m.k).value) * KCAL_PER_G[m.k] / K * 100) : 0, [a, b] = RANGE[m.k];
+    el.textContent = t('pctOf', { p: K > 0 ? p : '–', a, b });
+    el.classList.toggle('out', K > 0 && (p < a || p > b));
+  }
+}
+function fillGrams(gr) { for (const m of MACROS) $('#g_' + m.k).value = gr[m.k]; updatePct(); }
+// 칼로리를 바꾸면: 지금 비율대로 탄단지 g을 다시 계산
+function onKcalInput() { const K = num($('#gKcal').value); if (K > 0) fillGrams(gramsFor(K, gRatio)); else updatePct(); }
+// 탄단지 하나를 바꾸면: 칼로리는 그대로, 남은 칼로리를 나머지 둘이 서로의 비율대로 나눔
+function onMacroChange(k) {
+  const K = num($('#gKcal').value); if (!(K > 0)) { updatePct(); return; }
+  const e = Math.min(num($('#g_' + k).value) * KCAL_PER_G[k], K), rest = K - e;
+  const others = MACROS.map(m => m.k).filter(x => x !== k);
+  let w1 = gRatio[others[0]], w2 = gRatio[others[1]];
+  if (!(w1 + w2 > 0)) { w1 = 1; w2 = 1; }
+  const r = { [k]: e / K, [others[0]]: rest * w1 / (w1 + w2) / K, [others[1]]: rest * w2 / (w1 + w2) / K };
+  gRatio = r;
+  const gr = gramsFor(K, r); gr[k] = Math.round(e / KCAL_PER_G[k]);
+  fillGrams(gr);
+}
+function recRatio() {
+  if (!(num($('#gKcal').value) > 0)) $('#gKcal').value = 2000;
+  gRatio = { ...DEF_RATIO }; fillGrams(gramsFor(num($('#gKcal').value), gRatio));
 }
 
 const VIEWS = { day: dayView, week: weekView, month: monthView, foods: foodsView, goals: goalsView };
@@ -556,7 +595,7 @@ function render() {
   if (state.view === 'goals' && ae && ae.closest && ae.closest('.goal-form')) return;
   const keepSearch = state.view === 'foods' && ae && ae.id === 'foodSearch';
   $('#view').innerHTML = VIEWS[state.view]();
-  if (state.view === 'goals') updateGoalCalc();
+  if (state.view === 'goals') updatePct();
   if (state.view === 'foods') { filterFoods(); if (keepSearch) { const s = $('#foodSearch'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }
   if ($('#entryDlg').open) renderPicks();
 }
@@ -733,7 +772,6 @@ async function exportAll() {
   LS.set('meal.lastBackup', Date.now());
   return true;
 }
-const sameVals = (f, v) => v && String(f.unit || '') === v[0] && [f.kcal, f.carb, f.protein, f.fat].every((x, i) => Math.abs(num(x) - v[i + 1]) < 0.01);
 const cleanId = (s, p) => String(s || '').replace(/[^\w-]/g, '').slice(0, 40) || newId(p);
 function goalsFrom(g) {
   if (!g || typeof g !== 'object') return null;
@@ -744,21 +782,9 @@ function goalsFrom(g) {
 async function importJson(file) {
   let data;
   try { data = JSON.parse(await file.text()); } catch (e) { return toast(t('importUnread'), { kind: 'err', ms: 6000 }); }
-  if (!data || typeof data !== 'object') return toast(t('importBad'), { kind: 'err', ms: 6000 });
-  const isNew = data.app === 'meal' && Array.isArray(data.meals);
-  const isOld = !isNew && (data.entries && typeof data.entries === 'object' || Array.isArray(data.foods));
-  if (!isNew && !isOld) return toast(t('importBad'), { kind: 'err', ms: 6000 });
-
-  // 식사 목록 만들기
+  if (!data || data.app !== 'meal' || !Array.isArray(data.meals)) return toast(t('importBad'), { kind: 'err', ms: 6000 });
   const incoming = [];
-  if (isNew) for (const r of data.meals) { const m = r && mealFrom(cleanId(r.id, 'm'), r); if (m) incoming.push(m); }
-  else if (data.entries) {
-    let order = Date.now();
-    for (const [d, list] of Object.entries(data.entries)) {
-      if (!DATE_RE.test(d) || !Array.isArray(list)) continue;
-      for (const e of list) { const m = e && mealFrom(cleanId(e.id, 'm'), { ...e, d, createdAt: order++ }); if (m) incoming.push(m); }
-    }
-  }
+  for (const r of data.meals) { const m = r && mealFrom(cleanId(r.id, 'm'), r); if (m) incoming.push(m); }
   const tt = toast(t('importing'), { ms: 0 });
   let have;
   try {
@@ -767,33 +793,20 @@ async function importJson(file) {
   } catch (e) { tt.dismiss(); return toast(t('needOnline'), { kind: 'err', ms: 7000 }); }
   const writes = [];
   for (const m of incoming) { if (have.has(m.id)) continue; have.add(m.id); writes.push({ name: 'meals', id: m.id, val: mealDoc(m) }); }
-
-  // 음식
-  let foodAdded = 0; const uses = {};
-  const putFood = f => { state.userFoods[f.id] = f; writes.push({ name: 'foods', id: f.id, val: foodDoc(f) }); };
+  let foodAdded = 0;
   for (const r of (Array.isArray(data.foods) ? data.foods : [])) {
     const f = r && foodFrom(cleanId(r.id, 'f'), r); if (!f) continue;
-    if (isNew) { if (!state.userFoods[f.id] || BASE_BY_ID.has(f.id)) { putFood(f); foodAdded++; } continue; }
-    // 예전 앱: 기본 음식(id base…)과 직접 넣은 음식이 한 목록에 섞여 있음
-    const def = BASE_BY_NAME.get(norm(f.name));
-    if (def) {
-      if (f.uses > (state.baseUses[def.id] || 0)) uses[def.id] = f.uses;
-      if (!sameVals(f, [def.unit, def.kcal, def.carb, def.protein, def.fat]) && !sameVals(f, OLD_BASE_VALUES[def.name]) && !state.userFoods[def.id]) { putFood({ ...f, id: def.id }); foodAdded++; }
-      continue;
-    }
-    if (/^base\d+$/.test(r.id) && !f.uses && sameVals(f, OLD_BASE_VALUES[f.name])) continue;   // 이번에 뺀 기본 음식(라볶이)은 안 쓴 경우만 건너뜀
-    if (findFood(f.name)) continue;
-    putFood({ ...f, id: /^base\d+$/.test(r.id) ? newId('f') : f.id }); foodAdded++;
+    if (state.userFoods[f.id] && !BASE_BY_ID.has(f.id)) continue;
+    state.userFoods[f.id] = f; writes.push({ name: 'foods', id: f.id, val: foodDoc(f) }); foodAdded++;
   }
-  // 목표·숨김·사용 횟수
   const g = goalsFrom(data.goals), goalsChanged = g && JSON.stringify(g) !== JSON.stringify(state.goals);
-  const settings = {};
+  const settings = {}, uses = {};
   if (goalsChanged) { state.goals = g; settings.goals = g; }
-  if (isNew && Array.isArray(data.hidden)) {
+  if (Array.isArray(data.hidden)) {
     const h = [...new Set([...state.hidden, ...data.hidden.filter(id => BASE_BY_ID.has(id))])];
     if (h.length !== state.hidden.length) { state.hidden = h; settings.hidden = h; }
   }
-  if (isNew && data.baseUses && typeof data.baseUses === 'object') for (const [id, n] of Object.entries(data.baseUses)) if (BASE_BY_ID.has(id) && num(n) > (state.baseUses[id] || 0)) uses[id] = num(n);
+  if (data.baseUses && typeof data.baseUses === 'object') for (const [id, n] of Object.entries(data.baseUses)) if (BASE_BY_ID.has(id) && num(n) > (state.baseUses[id] || 0)) uses[id] = num(n);
   tt.dismiss();
   const mealCount = writes.filter(w => w.name === 'meals').length;
   if (!writes.length && !Object.keys(settings).length && !Object.keys(uses).length) return toast(t('importNone'));
@@ -801,7 +814,6 @@ async function importJson(file) {
   if (Object.keys(settings).length) Core.saveSettings('meal', settings).catch(() => {});
   if (Object.keys(uses).length) { state.baseUses = { ...state.baseUses, ...uses }; Core.saveSettings('mealUses', uses).catch(() => {}); }
   toast(L.importDone(mealCount, foodAdded, goalsChanged), { ms: 8000 });
-  // 가져온 기록이 있는 가장 최근 날로 이동
   const lastD = incoming.filter(m => writes.some(w => w.id === m.id)).map(m => m.d).sort().pop();
   if (lastD && ['day', 'week', 'month'].includes(state.view)) { state.cur = fromKey(lastD); watchCurrent(); }
   render();
@@ -883,6 +895,7 @@ $('#view').addEventListener('click', ev => {
   else if (a === 'addFood') openFood(null);
   else if (a === 'editFood') openFood(el.dataset.id);
   else if (a === 'delFood') deleteFood(el.dataset.id);
+  else if (a === 'recRatio') recRatio();
   else if (a === 'saveGoals') {
     const g = { kcal: num($('#gKcal').value) }; MACROS.forEach(m => { g[m.k] = num($('#g_' + m.k).value); });
     state.goals = g; Core.saveSettings('meal', { goals: g }).catch(() => {});
@@ -890,11 +903,13 @@ $('#view').addEventListener('click', ev => {
   }
 });
 $('#view').addEventListener('change', ev => {
+  if (ev.target.dataset.goal) onMacroChange(ev.target.dataset.goal);
   if (ev.target.dataset.actChange === 'pickDate' && DATE_RE.test(ev.target.value)) { state.cur = fromKey(ev.target.value); watchCurrent(); render(); }
 });
 $('#view').addEventListener('input', ev => {
   if (ev.target.id === 'foodSearch') { state.foodQuery = ev.target.value; filterFoods(); }
-  if (ev.target.matches('[data-goal]')) updateGoalCalc();
+  if (ev.target.id === 'gKcal') onKcalInput();
+  if (ev.target.matches('[data-goal]')) updatePct();
 });
 $('#jsonFile').addEventListener('change', ev => { const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (file) { $('#settingsDlg').close(); importJson(file); } });
 // 자정을 넘기거나 오래 열어 둔 뒤 돌아오면 '오늘' 표시를 새로
