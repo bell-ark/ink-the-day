@@ -11,9 +11,9 @@
 <link rel="stylesheet" href="../shared/base.css">
 <style>
 /* 이 앱에서만 쓰는 색 */
-:root[data-app="budget"]{--exp:#A8123F;--inc:#1F7A80;--bar:#E59AB3;--bar-soft:rgba(229,154,179,.32);--weekend:rgba(201,72,118,.06);--mark:rgba(247,170,198,.45);--line-soft:#F2DAE2}
-@media (prefers-color-scheme:dark){:root[data-app="budget"]:not([data-theme="light"]){--exp:#FF8FAA;--inc:#7DD3CF;--bar:#A85E7A;--bar-soft:rgba(168,94,122,.34);--weekend:rgba(247,230,236,.05);--mark:rgba(240,120,165,.24);--line-soft:#35232B}}
-:root[data-theme="dark"][data-app="budget"]{--exp:#FF8FAA;--inc:#7DD3CF;--bar:#A85E7A;--bar-soft:rgba(168,94,122,.34);--weekend:rgba(247,230,236,.05);--mark:rgba(240,120,165,.24);--line-soft:#35232B}
+:root[data-app="budget"]{--exp:#A8123F;--inc:#1F7A80;--save:#8A6410;--bar:#E59AB3;--bar-soft:rgba(229,154,179,.32);--weekend:rgba(201,72,118,.06);--mark:rgba(247,170,198,.45);--line-soft:#F2DAE2}
+@media (prefers-color-scheme:dark){:root[data-app="budget"]:not([data-theme="light"]){--exp:#FF8FAA;--inc:#7DD3CF;--save:#E8C27A;--bar:#A85E7A;--bar-soft:rgba(168,94,122,.34);--weekend:rgba(247,230,236,.05);--mark:rgba(240,120,165,.24);--line-soft:#35232B}}
+:root[data-theme="dark"][data-app="budget"]{--exp:#FF8FAA;--inc:#7DD3CF;--save:#E8C27A;--bar:#A85E7A;--bar-soft:rgba(168,94,122,.34);--weekend:rgba(247,230,236,.05);--mark:rgba(240,120,165,.24);--line-soft:#35232B}
 
 .wrap{max-width:1060px;margin:0 auto;padding:12px 16px 120px}
 .link{background:none;border:0;padding:10px 2px;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;font-size:15px}
@@ -28,19 +28,22 @@
 .top-actions{display:flex;gap:2px 14px;align-items:center;flex-wrap:wrap}
 
 /* 요약 */
-.figures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.figures{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
 .figures>div{padding:14px 0 14px 22px;border-left:1px solid var(--line)}
 .figures>div:first-child{padding-left:0;border-left:0}
 .figures dt{font-size:13px;color:var(--muted)}
 .figures dd{margin:2px 0 0;font-size:22px;font-weight:600}
 .figures dd.inc{color:var(--inc)}
+.figures dd.save{color:var(--save)}
 .figures .net dd{font-size:30px}
 .dbl{display:inline-block;border-bottom:4px double var(--ink);line-height:1.25}
 @media (max-width:639px){
-  .figures{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .figures{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .figures>div{padding-left:12px}
   .figures .net{grid-column:1/-1;order:-1;padding-left:0;border-left:0;border-bottom:1px solid var(--line)}
   .figures>div:nth-child(1){padding-left:0;border-left:0}
-  .figures>div:nth-child(2){padding-left:18px}
+  .figures dd{font-size:17px}
+  .figures .net dd{font-size:28px}
 }
 
 /* 예산 */
@@ -98,7 +101,7 @@ h2{margin:0;font-size:17px;font-weight:600}
 .fields .field{min-width:0}
 .field.amount,.field.memo{grid-column:1/-1}
 @media (min-width:600px){
-  .fields{grid-template-columns:128px 160px minmax(0,1fr) minmax(0,1fr)}
+  .fields{grid-template-columns:190px 160px minmax(0,1fr) minmax(0,1fr)}
   .field.amount,.field.memo{grid-column:span 2}
 }
 select.input{appearance:auto;padding:0 10px}
@@ -124,6 +127,8 @@ input[type="date"].input{padding:0 10px}
 .dh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0;padding:6px 0;border-bottom:1px solid var(--ink);font-size:14px;font-weight:600}
 .dh .tot{display:flex;gap:14px;font-weight:500;color:var(--muted)}
 .dh .tot .inc{color:var(--inc)}
+.dh .tot .save{color:var(--save)}
+.h-sub{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:2px}
 .entries{list-style:none;margin:0;padding:0}
 .entry{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:0 6px;border-bottom:1px solid var(--line-soft)}
 .entry.is-editing{background:var(--mark)}
@@ -133,6 +138,7 @@ input[type="date"].input{padding:0 10px}
 .e-sub{display:block;font-size:13px;color:var(--muted)}
 .e-amt{min-width:96px;text-align:right;font-weight:500;white-space:nowrap}
 .e-amt.inc{color:var(--inc)}
+.e-amt.save{color:var(--save)}
 .e-del{background:none;border:0;padding:10px 6px;min-height:44px;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
 .e-del.confirm{color:var(--exp);font-weight:600}
 .empty{color:var(--muted);padding:18px 0;margin:0}
@@ -178,6 +184,7 @@ input[type="date"].input{padding:0 10px}
             <div class="tseg" role="radiogroup" aria-labelledby="typeLab">
               <label><input type="radio" name="t" value="e" checked><span data-i="exp"></span></label>
               <label><input type="radio" name="t" value="i"><span data-i="inc"></span></label>
+              <label><input type="radio" name="t" value="s"><span data-i="sav"></span></label>
             </div>
           </div>
           <div class="field">
@@ -218,7 +225,6 @@ input[type="date"].input{padding:0 10px}
 
 <dialog id="settingsDlg"><div class="dlg"><h2 data-i="settings"></h2><div id="appSettings"></div><div id="commonBox"></div><div id="wipeBox"></div><div class="dlg-actions"><button class="btn primary" id="settingsClose" data-i="close"></button></div></div></dialog>
 <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
-<input type="file" id="legacyFile" accept=".html,.htm,text/html" hidden>
 
 <script type="module">
 import * as Core from '../shared/core.js';
@@ -226,19 +232,22 @@ const { esc, toast, LS } = Core;
 
 /* ===================== 고정 항목(코드로 저장, 화면에서만 언어별 이름) ===================== */
 const CATS = {
-  e: ['food', 'cafe', 'transport', 'housing', 'daily', 'health', 'culture', 'shopping', 'edu', 'gift', 'other'],
-  i: ['salary', 'side', 'allowance', 'otherinc']
+  e: ['food', 'cafe', 'transport', 'housing', 'insurance', 'daily', 'health', 'culture', 'meetup', 'shopping', 'edu', 'gift', 'other'],
+  i: ['salary', 'side', 'allowance', 'otherinc'],
+  s: ['deposit', 'invest', 'othersave']
 };
 const PAYS = ['card', 'cash', 'transfer'];
 const NAMES = {
   ko: {
-    food: '식비', cafe: '카페·간식', transport: '교통', housing: '주거·통신', daily: '생활용품', health: '의료·건강', culture: '문화·여가', shopping: '쇼핑·의류', edu: '교육', gift: '경조사·선물', other: '기타',
+    food: '식비', cafe: '카페·간식', transport: '교통·통신', housing: '주거·공과금', insurance: '보험', daily: '생활용품', health: '의료·건강', culture: '문화·여가', meetup: '모임', shopping: '쇼핑·의류', edu: '교육', gift: '경조사·선물', other: '기타',
     salary: '월급', side: '부업 수입', allowance: '용돈', otherinc: '기타 수입',
+    deposit: '적금·예금', invest: '투자', othersave: '기타 저축',
     card: '카드', cash: '현금', transfer: '계좌이체'
   },
   zh: {
-    food: '餐饮', cafe: '咖啡·零食', transport: '交通', housing: '住房·通讯', daily: '生活用品', health: '医疗·健康', culture: '文化·休闲', shopping: '购物·服饰', edu: '教育', gift: '人情·礼物', other: '其他',
+    food: '餐饮', cafe: '咖啡·零食', transport: '交通·通讯', housing: '住房·水电', insurance: '保险', daily: '生活用品', health: '医疗·健康', culture: '文化·休闲', meetup: '聚会', shopping: '购物·服饰', edu: '教育', gift: '人情·礼物', other: '其他',
     salary: '工资', side: '副业收入', allowance: '零花钱', otherinc: '其他收入',
+    deposit: '定期·存款', invest: '投资', othersave: '其他储蓄',
     card: '银行卡', cash: '现金', transfer: '转账'
   }
 };
@@ -250,24 +259,22 @@ const D = {
     ym: (y, m) => `${y}년 ${m}월`, md: (m, d) => `${m}월 ${d}일`, dayHead: (m, d, w) => `${m}월 ${d}일 ${w}요일`,
     dayAria: (m, d, w, sp, inn) => `${m}월 ${d}일 ${w}요일, 지출 ${sp}${inn ? `, 수입 ${inn}` : ''}`,
     prevMonth: '이전 달', nextMonth: '다음 달', thisMonth: '이번 달로', importCsv: 'CSV 가져오기', exportCsv: 'CSV 내보내기',
-    summaryAria: '이달 요약', income: '수입', expense: '지출', net: '잔액',
+    summaryAria: '이달 요약', income: '수입', expense: '지출', saving: '저축', net: '잔액',
     monthBudget: '월 예산', save: '저장', cancel: '취소', budgetPh: '예: 2,000,000', budgetFrom: '새 예산은 {m}월부터 적용되고, 이전 달 기록에는 영향이 없어요.',
     setBudget: '월 예산 정하기', setBudgetHint: '예산을 정하면 하루에 얼마까지 쓸 수 있는지 알려 드려요.', editBudget: '예산 바꾸기',
-    overBy: '예산을 {x} 넘었어요.', lastDay: '오늘이 이달 마지막 날이에요. 오늘은 {x}까지 쓸 수 있어요.', perDay: '오늘을 포함해 {n}일 남았어요. 하루에 {x}까지 쓸 수 있어요.', underBy: '예산보다 {x} 덜 썼어요.',
+    overBy: '예산을 {x} 넘었어요.', lastDay: '오늘이 이달 마지막 날이에요. 오늘은 {x}까지 쓸 수 있어요.', perDay: '오늘을 포함해 {n}일 남았어요. 하루에 {x}까지 쓸 수 있어요.', underBy: '예산보다 {x} 덜 썼어요. 이번 달 살림꾼 인정!',
     today: '오늘', budgetAria: '예산의 {p}%를 썼어요', tickAria: ', 세로선은 오늘', spent: '지출 {x} ({p}%)', over: '초과 {x}', remain: '남은 예산 {x}',
     dailyTitle: '날짜별 지출', dayBudget: '하루 예산 {x}', overDays: '예산을 넘은 날', incDays: '수입이 있는 날', noRecMonth: '{m}월에는 아직 기록이 없어요.', daysAria: '날짜를 누르면 그날 내역만 보여요',
-    newEntry: '기록하기', editEntry: '내역 고치기', type: '구분', exp: '지출', inc: '수입', date: '날짜', amount: '금액', cat: '분류', pay: '결제 수단', memo: '메모', memoPh: '예: 점심 칼국수',
+    newEntry: '기록하기', editEntry: '내역 고치기', type: '구분', exp: '지출', inc: '수입', sav: '저축', date: '날짜', amount: '금액', cat: '분류', pay: '결제 수단', memo: '메모', memoPh: '예: 점심 칼국수',
     saveEdit: '고친 내용 저장', notLoaded: '내역을 아직 불러오는 중이에요. 잠시 후 저장해 주세요.', needAmount: '금액을 입력해 주세요.', needDateIn: '{m}월 안의 날짜를 골라 주세요.', saved: '저장했어요.', editSaved: '고친 내용을 저장했어요.', deleted: '삭제했어요.',
     details: '내역', count: '{n}건', loading: '불러오는 중…', emptyMonth: '{m}월에는 아직 내역이 없어요. 위에서 금액과 분류를 입력하고 저장하면 여기에 보여요.', noMatch: '조건에 맞는 내역이 없어요.', showAll: '전체 보기',
-    filtering: '‘{w}’ 내역만 보는 중이에요.', join: ', ', editHint: '눌러서 고치기', del: '삭제', confirmDel: '정말 삭제', catTitle: '분류별 지출', catEmpty: '지출이 생기면 분류별 비율이 여기에 보여요.', lt1: '1% 미만',
+    filtering: '‘{w}’ 내역만 보는 중이에요.', join: ', ', editHint: '눌러서 고치기', del: '삭제', confirmDel: '정말 삭제', catTitle: '돈은 어디로', catSub: '분류별 지출', catEmpty: '지출이 생기면 분류별 비율이 여기에 보여요.', lt1: '1% 미만',
     csvHead: ['날짜', '구분', '분류', '메모', '결제수단', '금액'], nothingExport: '내보낼 내역이 없어요.', exported: 'CSV 파일을 내려받았어요.',
     csvBig: '파일이 5MB를 넘어요. 살림결에서 내보낸 CSV인지 확인해 주세요.', csvUnread: '이 파일을 읽을 수 없어요.', csvNone: '가져올 내역을 찾지 못했어요. 날짜와 금액 열이 있어야 해요.', csvBad: ' ({n}줄은 알아볼 수 없었어요)', csvEmpty: '파일에 내역이 없어요.',
     readExistFail: '기존 내역을 확인하지 못해서 아무것도 가져오지 않았어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', allDup: '모두 이미 있는 내역이라 가져오지 않았어요.', importing: '가져오는 중…',
     imported: (a, months, dup, bad) => `${a}건을 가져왔어요${months > 1 ? ` (${months}개월)` : ''}.${dup ? ` 겹치는 ${dup}건은 건너뛰었어요.` : ''}${bad ? ` ${bad}줄은 알아볼 수 없었어요.` : ''}`,
     settings: '설정', close: '닫기', uiLang: '화면 언어',
     backup: '백업', backupDesc: '모든 달의 내역을 CSV 파일 하나로 내려받아요. 나중에 ‘CSV 가져오기’로 다시 넣을 수 있어요.', backupBtn: '전체 내역 CSV 내려받기', needOnline: '인터넷에 연결된 상태에서 다시 시도해 주세요.',
-    legacy: '이전 记账本에서 옮기기', legacyDesc: '예전에 쓰던 记账本 HTML 파일(保存为 HTML로 만든 파일)을 고르면 그 안의 내역과 예산을 옮겨 와요. 여러 번 골라도 같은 내역이 두 번 들어가지 않아요.', legacyBtn: 'HTML 파일 고르기',
-    legacyBad: '记账本 데이터가 들어 있는 HTML 파일이 아니에요.', legacyNone: '옮길 새 내역이 없어요. 이미 모두 옮겨져 있어요.', legacyDone: '내역 {n}건{b}을 옮겼어요.', legacyBudgets: ', 예산 {n}개',
     wipe: '모든 내역과 예산 지우기'
   },
   zh: {
@@ -275,36 +282,34 @@ const D = {
     ym: (y, m) => `${y}年${m}月`, md: (m, d) => `${m}月${d}日`, dayHead: (m, d, w) => `${m}月${d}日 周${w}`,
     dayAria: (m, d, w, sp, inn) => `${m}月${d}日 周${w}，支出 ${sp}${inn ? `，收入 ${inn}` : ''}`,
     prevMonth: '上个月', nextMonth: '下个月', thisMonth: '回到本月', importCsv: '导入 CSV', exportCsv: '导出 CSV',
-    summaryAria: '本月概览', income: '收入', expense: '支出', net: '结余',
+    summaryAria: '本月概览', income: '收入', expense: '支出', saving: '储蓄', net: '结余',
     monthBudget: '月预算', save: '保存', cancel: '取消', budgetPh: '例：2,000,000', budgetFrom: '新预算从{m}月起生效，之前月份的记录不受影响。',
     setBudget: '设置月预算', setBudgetHint: '设置预算后，这里会告诉你每天还能花多少。', editBudget: '修改预算',
-    overBy: '已超出预算 {x}。', lastDay: '今天是本月最后一天，今天最多还能花 {x}。', perDay: '含今天还剩 {n} 天，每天最多可花 {x}。', underBy: '比预算少花了 {x}。',
+    overBy: '已超出预算 {x}。', lastDay: '今天是本月最后一天，今天最多还能花 {x}。', perDay: '含今天还剩 {n} 天，每天最多可花 {x}。', underBy: '比预算少花了 {x}。这个月没当月光族！',
     today: '今天', budgetAria: '已使用预算的 {p}%', tickAria: '，竖线表示今天', spent: '支出 {x}（{p}%）', over: '超出 {x}', remain: '剩余预算 {x}',
     dailyTitle: '每日支出', dayBudget: '每日预算 {x}', overDays: '超出预算的日子', incDays: '有收入的日子', noRecMonth: '{m}月还没有记录。', daysAria: '点击日期，只看当天明细',
-    newEntry: '记一笔', editEntry: '修改明细', type: '类型', exp: '支出', inc: '收入', date: '日期', amount: '金额', cat: '分类', pay: '支付方式', memo: '备注', memoPh: '例：午饭 牛肉面',
+    newEntry: '记一笔', editEntry: '修改明细', type: '类型', exp: '支出', inc: '收入', sav: '储蓄', date: '日期', amount: '金额', cat: '分类', pay: '支付方式', memo: '备注', memoPh: '例：午饭 牛肉面',
     saveEdit: '保存修改', notLoaded: '明细尚未加载完成，请稍后再保存。', needAmount: '请输入金额。', needDateIn: '请选择{m}月内的日期。', saved: '已保存。', editSaved: '修改已保存。', deleted: '已删除。',
     details: '明细', count: '{n} 笔', loading: '正在加载…', emptyMonth: '{m}月还没有明细。在上方填写金额和分类后保存，记录就会显示在这里。', noMatch: '没有符合条件的明细。', showAll: '查看全部',
-    filtering: '正在只看「{w}」的明细。', join: '、', editHint: '点击修改', del: '删除', confirmDel: '确认删除', catTitle: '分类支出', catEmpty: '有支出后，这里会显示各分类的占比。', lt1: '不足 1%',
+    filtering: '正在只看「{w}」的明细。', join: '、', editHint: '点击修改', del: '删除', confirmDel: '确认删除', catTitle: '钱都去哪儿了', catSub: '分类支出', catEmpty: '有支出后，这里会显示各分类的占比。', lt1: '不足 1%',
     csvHead: ['日期', '类型', '分类', '备注', '支付方式', '金额'], nothingExport: '没有可导出的明细。', exported: '已导出 CSV。',
     csvBig: '文件超过 5 MB，请确认选的是烟火簿导出的 CSV。', csvUnread: '无法读取这个文件。', csvNone: '没有找到可导入的明细。文件需要包含日期和金额两列。', csvBad: '（{n} 行无法识别）', csvEmpty: '文件里没有明细。',
     readExistFail: '未能核对已有明细，没有导入任何内容。请检查网络连接后再试。', allDup: '这些明细都已经在烟火簿里了，没有重复导入。', importing: '正在导入…',
     imported: (a, months, dup, bad) => `已导入 ${a} 笔${months > 1 ? `，涉及 ${months} 个月` : ''}${dup ? `，跳过 ${dup} 笔重复` : ''}${bad ? `，${bad} 行无法识别` : ''}。`,
     settings: '设置', close: '关闭', uiLang: '界面语言',
     backup: '备份', backupDesc: '把所有月份的明细下载为一个 CSV 文件，之后可用“导入 CSV”恢复。', backupBtn: '下载全部明细（CSV）', needOnline: '请在联网状态下再试。',
-    legacy: '从旧版记账本迁移', legacyDesc: '选择以前用“保存为 HTML”保存的记账本文件，就能把其中的明细和预算迁移过来。重复选择同一个文件也不会重复导入。', legacyBtn: '选择 HTML 文件',
-    legacyBad: '这个 HTML 文件里没有记账本数据。', legacyNone: '没有需要迁移的新明细，已经全部迁移过了。', legacyDone: '已迁移 {n} 笔明细{b}。', legacyBudgets: '，{n} 条预算',
     wipe: '删除所有明细和预算'
   }
 };
 // 원본·CSV에 있던 글자 → 코드(두 언어 이름과 코드 모두 알아봄)
 const CODE_OF = {};
 for (const lang of ['ko', 'zh']) for (const [code, name] of Object.entries(NAMES[lang])) { CODE_OF[name] = code; CODE_OF[code] = code; }
-Object.assign(CODE_OF, { '银行卡': 'card', '체크카드': 'card', '신용카드': 'card', '이체': 'transfer' });
+Object.assign(CODE_OF, { '银行卡': 'card', '체크카드': 'card', '신용카드': 'card', '이체': 'transfer',
+  '교통': 'transport', '交通': 'transport', '주거·통신': 'housing', '住房·通讯': 'housing' });   // 2026-11 바뀌기 전 분류 이름
+const OTHER = { e: 'other', i: 'otherinc', s: 'othersave' };
 const catCode = (text, t) => {
   const s = String(text || '').trim();
-  if (!s) return t === 'i' ? 'otherinc' : 'other';
-  if (t === 'i' && ['其他', '기타', 'other'].includes(s)) return 'otherinc';
-  if (t === 'e' && ['其他收入', '기타 수입', 'otherinc'].includes(s)) return 'other';
+  if (!s || ['其他', '기타', 'other', '其他收入', '기타 수입', 'otherinc', '其他储蓄', '기타 저축', 'othersave'].includes(s)) return OTHER[t];
   return CODE_OF[s] || s.slice(0, 20);      // 모르는 분류는 글자 그대로(직접 만든 분류)
 };
 const payCode = text => { const s = String(text || '').trim(); return s ? (CODE_OF[s] || s.slice(0, 20)) : ''; };
@@ -328,7 +333,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const pad = n => String(n).padStart(2, '0');
 const nf = new Intl.NumberFormat('ko-KR');
 const won = n => '₩' + nf.format(Math.round(n));
-const signed = (n, ty) => (ty === 'i' ? '+' : '−') + '₩' + nf.format(n);
+const signed = (n, ty) => (ty === 'i' ? '+' : ty === 's' ? '' : '−') + '₩' + nf.format(n);   // 저축은 부호 없이 저축 색으로
 const newId = () => 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const todayYmd = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const curYm = () => todayYmd().slice(0, 7);
@@ -341,8 +346,8 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // Firestore 문서 → 화면용 기록(잘못된 문서는 버림)
 function fromDoc(id, v) {
-  if (!v || !DATE_RE.test(v.d) || (v.t !== 'e' && v.t !== 'i') || !(Number(v.a) > 0)) return null;
-  return { id, d: v.d, t: v.t, c: String(v.c || (v.t === 'i' ? 'otherinc' : 'other')), a: Math.round(Number(v.a)), m: String(v.m || ''), p: v.t === 'e' ? String(v.p || '') : '', createdAt: Number(v.createdAt) || 0 };
+  if (!v || !DATE_RE.test(v.d) || !OTHER[v.t] || !(Number(v.a) > 0)) return null;
+  return { id, d: v.d, t: v.t, c: String(v.c || OTHER[v.t]), a: Math.round(Number(v.a)), m: String(v.m || ''), p: v.t === 'e' ? String(v.p || '') : '', createdAt: Number(v.createdAt) || 0 };
 }
 const toDoc = e => ({ d: e.d, t: e.t, c: e.c, a: e.a, m: e.m, p: e.t === 'e' ? e.p : '', createdAt: e.createdAt || Date.now(), updatedAt: Date.now() });
 const entryKey = e => [e.d, e.t, e.c, e.a, e.m, e.p].join('\u0001');
@@ -363,21 +368,23 @@ function compute() {
   const ym = state.ym, [y, m] = parts(ym), n = dim(ym);
   const list = Object.values(state.entries).sort((a, b) => a.d.localeCompare(b.d) || a.createdAt - b.createdAt);
   const daily = new Array(n + 1).fill(0), inc = new Array(n + 1).fill(0), cats = {};
-  let tin = 0, tout = 0;
+  let tin = 0, tout = 0, tsave = 0;
   for (const e of list) {
     const d = +e.d.slice(8, 10);
     if (e.t === 'e') { daily[d] += e.a; tout += e.a; cats[e.c] = (cats[e.c] || 0) + e.a; }
-    else { inc[d] += e.a; tin += e.a; }
+    else if (e.t === 'i') { inc[d] += e.a; tin += e.a; }
+    else tsave += e.a;                 // 저축은 예산·날짜별 지출에 넣지 않음
   }
-  return { ym, y, m, n, list, daily, inc, cats, tin, tout, budget: budgetFor(ym) };
+  return { ym, y, m, n, list, daily, inc, cats, tin, tout, tsave, budget: budgetFor(ym) };
 }
 
 /* ===================== 그리기 ===================== */
 function renderSummary(v) {
-  const net = v.tin - v.tout;
+  const net = v.tin - v.tout - v.tsave;
   let html = `<dl class="figures num">
     <div><dt>${esc(t('income'))}</dt><dd class="inc">${won(v.tin)}</dd></div>
     <div><dt>${esc(t('expense'))}</dt><dd>${won(v.tout)}</dd></div>
+    <div><dt>${esc(t('saving'))}</dt><dd class="save">${won(v.tsave)}</dd></div>
     <div class="net"><dt>${esc(t('net'))}</dt><dd><span class="dbl">${net < 0 ? '−' : ''}${won(Math.abs(net))}</span></dd></div>
   </dl>`;
   if (budgets === null) return html;
@@ -434,7 +441,7 @@ function renderSky(v) {
     legend.push(`<span><i class="sw-over"></i>${esc(t('overDays'))}</span>`);
   }
   legend.push(`<span><i class="sw-inc"></i>${esc(t('incDays'))}</span>`);
-  const empty = state.loaded && v.tout === 0 && v.tin === 0 ? `<p class="sky-empty">${esc(t('noRecMonth', { m: v.m }))}</p>` : '';
+  const empty = state.loaded && v.tout === 0 && v.tin === 0 && v.tsave === 0 ? `<p class="sky-empty">${esc(t('noRecMonth', { m: v.m }))}</p>` : '';
   return `<div class="sec-head"><h2>${esc(t('dailyTitle'))}</h2><div class="legend">${legend.join('')}</div></div>
     <div class="sky-frame" style="--n:${n}"><div class="days" role="group" aria-label="${esc(t('daysAria'))}">${days}</div>
     ${dayBudget > 0 ? `<div class="guide-layer"><i class="guide" style="bottom:${(dayBudget / maxV * 100).toFixed(2)}%"></i></div>` : ''}${empty}</div>`;
@@ -442,8 +449,9 @@ function renderSky(v) {
 
 function renderBreakdown(v) {
   const rows = Object.entries(v.cats).sort((a, b) => b[1] - a[1]);
-  if (!rows.length) return `<h2>${esc(t('catTitle'))}</h2><p class="empty">${esc(t('catEmpty'))}</p>`;
-  return `<h2>${esc(t('catTitle'))}</h2><ul class="cats">` + rows.map(([c, a]) => {
+  const head = `<h2>${esc(t('catTitle'))}<span class="h-sub">${esc(t('catSub'))}</span></h2>`;
+  if (!rows.length) return `${head}<p class="empty">${esc(t('catEmpty'))}</p>`;
+  return `${head}<ul class="cats">` + rows.map(([c, a]) => {
     const p = a / v.tout * 100;
     return `<li><button type="button" class="cat-row" data-act="cat" data-cat="${esc(c)}" aria-pressed="${state.filter.cat === c}">
       <span class="cbar" style="width:${p.toFixed(1)}%"></span><span class="cname">${esc(label(c))}</span><span class="camt num">${won(a)}</span><span class="cpct num">${p < 1 ? esc(t('lt1')) : Math.round(p) + '%'}</span></button></li>`;
@@ -473,15 +481,16 @@ function renderList(v) {
     const g = groups[d].slice().reverse();
     const di = g.filter(e => e.t === 'i').reduce((s, e) => s + e.a, 0);
     const de = g.filter(e => e.t === 'e').reduce((s, e) => s + e.a, 0);
+    const ds = g.filter(e => e.t === 's').reduce((s, e) => s + e.a, 0);
     const dd = +d.slice(8, 10), w = dow(state.ym, dd);
     return `<section class="dgroup"><h3 class="dh"><span>${esc(L.dayHead(v.m, dd, L.wd[w]))}</span>
-      <span class="tot num">${di ? `<span class="inc">+${nf.format(di)}</span>` : ''}${de ? `<span>−${nf.format(de)}</span>` : ''}</span></h3>
+      <span class="tot num">${di ? `<span class="inc">+${nf.format(di)}</span>` : ''}${ds ? `<span class="save">${esc(t('sav'))} ${nf.format(ds)}</span>` : ''}${de ? `<span>−${nf.format(de)}</span>` : ''}</span></h3>
       <ul class="entries">${g.map(e => {
         const sub = e.t === 'e' && e.p ? label(e.p) : '';
         return `<li class="entry${state.editing === e.id ? ' is-editing' : ''}">
           <button type="button" class="entry-main" data-act="edit" data-id="${esc(e.id)}" title="${esc(t('editHint'))}" aria-label="${esc(`${label(e.c)} ${e.m} ${signed(e.a, e.t)}, ${t('editHint')}`)}">
             <span class="e-title"><b>${esc(label(e.c))}</b>${esc(e.m)}</span>${sub ? `<span class="e-sub">${esc(sub)}</span>` : ''}</button>
-          <span class="e-amt num${e.t === 'i' ? ' inc' : ''}">${signed(e.a, e.t)}</span>
+          <span class="e-amt num${e.t === 'i' ? ' inc' : e.t === 's' ? ' save' : ''}">${signed(e.a, e.t)}</span>
           <button type="button" class="e-del${state.confirmDel === e.id ? ' confirm' : ''}" data-act="del" data-id="${esc(e.id)}">${esc(state.confirmDel === e.id ? t('confirmDel') : t('del'))}</button>
         </li>`;
       }).join('')}</ul></section>`;
@@ -642,7 +651,7 @@ const csvQ = (s, text) => {
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 };
 function toCsv(list) {
-  const rows = [L.csvHead.join(',')].concat(list.map(e => [e.d, e.t === 'e' ? t('exp') : t('inc'), csvQ(label(e.c), 1), csvQ(e.m, 1), csvQ(e.p ? label(e.p) : '', 1), e.a].join(',')));
+  const rows = [L.csvHead.join(',')].concat(list.map(e => [e.d, t({ e: 'exp', i: 'inc', s: 'sav' }[e.t]), csvQ(label(e.c), 1), csvQ(e.m, 1), csvQ(e.p ? label(e.p) : '', 1), e.a].join(',')));
   return '\uFEFF' + rows.join('\r\n');
 }
 function exportCsv() {
@@ -708,7 +717,7 @@ function rowsToEntries(rows) {
     const dm = cell(r, 'd').match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
     const amt = Math.round(Number(cell(r, 'a').replace(/[^\d.]/g, '')));
     const tv = cell(r, 't').toLowerCase();
-    const ty = ['收入', '수입', 'i', 'income'].includes(tv) ? 'i' : ['支出', '지출', 'e', 'expense', ''].includes(tv) ? 'e' : null;
+    const ty = ['收入', '수입', 'i', 'income'].includes(tv) ? 'i' : ['储蓄', '저축', 's', 'saving', 'savings'].includes(tv) ? 's' : ['支出', '지출', 'e', 'expense', ''].includes(tv) ? 'e' : null;
     if (!dm || !ty || !(amt > 0)) { bad++; continue; }
     const ym = `${dm[1]}-${pad(+dm[2])}`, day = +dm[3];
     if (+dm[2] < 1 || +dm[2] > 12 || day < 1 || day > dim(ym)) { bad++; continue; }
@@ -745,44 +754,6 @@ async function importCsv(file) {
   if (!months.has(state.ym)) go(ms[ms.length - 1]);
 }
 
-/* ===================== 이전 记账本 HTML에서 옮기기 ===================== */
-async function importLegacy(file) {
-  let seed;
-  try {
-    const doc = new DOMParser().parseFromString(await file.text(), 'text/html');
-    seed = JSON.parse(doc.getElementById('ledger-data').textContent);
-  } catch (e) { seed = null; }
-  if (!seed || !seed.months || typeof seed.months !== 'object') return toast(t('legacyBad'), { kind: 'err', ms: 6000 });
-  const tt = toast(t('importing'), { ms: 0 });
-  let existing;
-  try { existing = new Set((await Core.readAll(COL)).map(d => d.id)); }
-  catch (e) { tt.dismiss(); return toast(t('needOnline'), { kind: 'err', ms: 7000 }); }
-  const writes = [], months = new Set(); let order = Date.now();
-  for (const [ym, list] of Object.entries(seed.months)) {
-    if (!/^\d{4}-\d{2}$/.test(ym) || !Array.isArray(list)) continue;
-    for (const r of list) {
-      if (!r || typeof r.d !== 'string' || !r.d.startsWith(ym) || !DATE_RE.test(r.d) || (r.t !== 'e' && r.t !== 'i') || !(Number(r.a) > 0)) continue;
-      const id = String(r.id || '').replace(/[^\w-]/g, '').slice(0, 40) || newId();
-      if (existing.has(id)) continue;
-      existing.add(id);
-      const e = { id, d: r.d, t: r.t, a: Math.round(Number(r.a)), c: catCode(r.c, r.t), m: String(r.m || '').slice(0, 200), p: r.t === 'e' ? payCode(r.p) : '', createdAt: order++ };
-      writes.push([id, toDoc(e)]); months.add(ym);
-    }
-  }
-  const add = {};
-  if (seed.budgets && typeof seed.budgets === 'object') {
-    for (const [k, v] of Object.entries(seed.budgets)) if (/^\d{4}-\d{2}$/.test(k) && !(k in (budgets || {})) && Number(v) > 0) add[k] = Math.round(Number(v));
-  }
-  tt.dismiss();
-  const nb = Object.keys(add).length;
-  if (!writes.length && !nb) return toast(t('legacyNone'));
-  if (writes.length) Core.putMany(COL, writes).catch(() => {});
-  if (nb) { budgets = { ...(budgets || {}), ...add }; Core.saveSettings('budget', { budgets }).catch(() => {}); }
-  toast(t('legacyDone', { n: writes.length, b: nb ? t('legacyBudgets', { n: nb }) : '' }), { ms: 7000 });
-  const ms = [...months].sort();
-  if (ms.length && !months.has(state.ym)) go(ms[ms.length - 1]); else render();
-}
-
 /* ===================== 전체 삭제(공통 모듈이 백업 → 직접 입력 확인 → 이 함수 순서로 부름) ===================== */
 async function wipeLedger() {
   const docs = await Core.readAll(COL);
@@ -798,9 +769,7 @@ function renderSettings() {
     <div class="set-sec"><h3>${esc(t('uiLang'))}</h3><div class="seg" role="group" aria-label="${esc(t('uiLang'))}">
       <button data-ui="ko" lang="ko" aria-pressed="${cfg.uiLang === 'ko'}">한국어</button><button data-ui="zh" lang="zh-CN" aria-pressed="${cfg.uiLang === 'zh'}">中文</button></div></div>
     <div class="set-sec"><h3>${esc(t('backup'))}</h3><p>${esc(t('backupDesc'))}</p>
-      <div class="set-row"><button class="btn" data-s="backup">${esc(t('backupBtn'))}</button></div></div>
-    <div class="set-sec"><h3>${esc(t('legacy'))}</h3><p>${esc(t('legacyDesc'))}</p>
-      <div class="set-row"><button class="btn" data-s="legacy">${esc(t('legacyBtn'))}</button></div></div>`;
+      <div class="set-row"><button class="btn" data-s="backup">${esc(t('backupBtn'))}</button></div></div>`;
   wipeUI?.render();
 }
 function openSettings() { renderSettings(); $('#settingsDlg').showModal(); }
@@ -808,7 +777,6 @@ $('#appSettings').addEventListener('click', async e => {
   const ui = e.target.closest('[data-ui]');
   if (ui) { setCfg({ uiLang: ui.dataset.ui }); return; }
   const b = e.target.closest('[data-s]'); if (!b) return;
-  if (b.dataset.s === 'legacy') { $('#legacyFile').click(); return; }
   if (b.dataset.s === 'backup') {
     $('#settingsDlg').close();
     try { const r = await exportAll(); toast(r === 'empty' ? t('nothingExport') : t('exported')); }
@@ -902,7 +870,6 @@ f.date.addEventListener('change', () => { state.date = f.date.value; });
 f.cat.addEventListener('change', () => { state.cat = f.cat.value; });
 f.pay.addEventListener('change', () => { state.pay = f.pay.value; });
 $('#csvFile').addEventListener('change', ev => { const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (file) importCsv(file); });
-$('#legacyFile').addEventListener('change', ev => { const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (file) { $('#settingsDlg').close(); importLegacy(file); } });
 // 자정을 넘기거나 오래 열어 둔 뒤 돌아오면 '오늘' 표시를 새로
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.ym) render(); });
 
